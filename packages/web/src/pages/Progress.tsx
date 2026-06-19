@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { useApp, AREA_COLOR_MAP } from "@/lib/store";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   LineChart,
   Line,
@@ -82,7 +84,7 @@ export function ProgressPage() {
                 key={d}
                 type="button"
                 onClick={() => setWindowDays(d)}
-                className={`rounded px-3 py-1 text-xs font-medium ${windowDays === d ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+                className={`rounded px-3 py-1 text-xs font-medium transition-colors ${windowDays === d ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
               >
                 {d}d
               </button>
@@ -91,6 +93,7 @@ export function ProgressPage() {
         }
       />
 
+      {/* Stat cards */}
       <section className="mb-10 grid gap-4 md:grid-cols-3">
         <BigStat
           icon={<Flame className="size-4" />}
@@ -112,7 +115,8 @@ export function ProgressPage() {
         />
       </section>
 
-      <section className="mb-10 rounded-2xl bg-card p-6 ring-1 ring-black/5">
+      {/* Per-area line chart */}
+      <Card className="mb-10 p-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold">Per-area completion</h2>
@@ -177,8 +181,9 @@ export function ProgressPage() {
             </LineChart>
           </ResponsiveContainer>
         </div>
-      </section>
+      </Card>
 
+      {/* Area breakdown heatmaps */}
       <section>
         <h2 className="mb-4 mono text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
           Area breakdown
@@ -194,18 +199,19 @@ export function ProgressPage() {
             ).length;
             const pct = slots ? Math.round((done / slots) * 100) : 0;
             return (
-              <div
-                key={a.id}
-                className="rounded-2xl bg-card p-5 ring-1 ring-black/5"
-              >
+              <Card key={a.id} className="p-5">
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className={`size-2 rounded-full bg-area-${a.color}`} />
+                    <span
+                      className={`size-2 rounded-full bg-area-${a.color}`}
+                    />
                     <span className="text-sm font-semibold">{a.name}</span>
                   </div>
-                  <span className={`mono text-xs text-area-${a.color}`}>
+                  <Badge
+                    className={`mono border-0 text-[10px] bg-area-${a.color}/10 text-area-${a.color}`}
+                  >
                     {pct}%
-                  </span>
+                  </Badge>
                 </div>
                 <div className="mb-4 grid grid-cols-7 gap-1 md:grid-cols-14">
                   {days.map((d) => {
@@ -244,7 +250,7 @@ export function ProgressPage() {
                     {done} / {slots} completions
                   </span>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
@@ -265,7 +271,7 @@ function BigStat({
   unit: string;
 }) {
   return (
-    <div className="rounded-2xl bg-card p-6 ring-1 ring-black/5">
+    <Card className="p-6">
       <div className="mono mb-3 flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
         {icon} {label}
       </div>
@@ -273,6 +279,6 @@ function BigStat({
         <span className="text-4xl font-extrabold tracking-tight">{value}</span>
         <span className="text-xs text-muted-foreground">{unit}</span>
       </div>
-    </div>
+    </Card>
   );
 }

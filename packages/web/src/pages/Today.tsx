@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { useApp, todayStr } from "@/lib/store";
+import { Separator } from "@/components/ui/separator";
 import { Check } from "lucide-react";
 
 export function TodayPage() {
@@ -59,13 +60,14 @@ export function TodayPage() {
       ) : (
         <div className="space-y-12">
           {grouped.map(({ area, items }) => {
+            if (items.length === 0) return null;
             const areaDone = items.filter((h) =>
               checkins.some((c) => c.habitId === h.id && c.date === today),
             ).length;
             return (
               <section key={area.id} aria-labelledby={`area-${area.id}-heading`}>
                 <div className="mb-5 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-border" aria-hidden="true" />
+                  <Separator className="flex-1" />
                   <div className="flex items-center gap-2">
                     <span
                       className={`size-2 rounded-full bg-area-${area.color}`}
@@ -84,68 +86,62 @@ export function TodayPage() {
                       {areaDone}/{items.length}
                     </span>
                   </div>
-                  <div className="h-px flex-1 bg-border" aria-hidden="true" />
+                  <Separator className="flex-1" />
                 </div>
 
-                {items.length === 0 ? (
-                  <p className="rounded-xl bg-card p-6 text-center text-sm text-muted-foreground ring-1 ring-black/5">
-                    No habits here yet.
-                  </p>
-                ) : (
-                  <ul className="space-y-2" role="list">
-                    {items.map((h) => {
-                      const isDone = checkins.some(
-                        (c) => c.habitId === h.id && c.date === today,
-                      );
-                      return (
-                        <li key={h.id}>
-                          <button
-                            type="button"
-                            role="checkbox"
-                            aria-checked={isDone}
-                            aria-label={`${h.name}, ${h.frequency}, ${isDone ? "completed" : "not completed"}`}
-                            onClick={() => toggleCheckin(h.id, today)}
-                            className={`group flex w-full items-center justify-between rounded-xl p-4 text-left ring-1 transition-all ${
-                              isDone
-                                ? `bg-area-${area.color}/5 ring-area-${area.color}/30`
-                                : "bg-card ring-black/5 hover:ring-foreground/30"
-                            }`}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div
-                                aria-hidden="true"
-                                className={`grid size-6 shrink-0 place-items-center rounded-md transition-colors ${
-                                  isDone
-                                    ? `bg-area-${area.color} text-background`
-                                    : `ring-2 ring-border group-hover:ring-area-${area.color}/40`
-                                }`}
-                              >
-                                {isDone && (
-                                  <Check className="size-3.5" strokeWidth={3} />
-                                )}
-                              </div>
-                              <div>
-                                <p
-                                  className={`text-sm font-medium ${isDone ? "text-muted-foreground line-through" : ""}`}
-                                >
-                                  {h.name}
-                                </p>
-                                {h.notes && (
-                                  <p className="mt-0.5 text-xs text-muted-foreground">
-                                    {h.notes}
-                                  </p>
-                                )}
-                              </div>
+                <ul className="space-y-2" role="list">
+                  {items.map((h) => {
+                    const isDone = checkins.some(
+                      (c) => c.habitId === h.id && c.date === today,
+                    );
+                    return (
+                      <li key={h.id}>
+                        <button
+                          type="button"
+                          role="checkbox"
+                          aria-checked={isDone}
+                          aria-label={`${h.name}, ${h.frequency}, ${isDone ? "completed" : "not completed"}`}
+                          onClick={() => toggleCheckin(h.id, today)}
+                          className={`group flex w-full items-center justify-between rounded-xl p-4 text-left ring-1 transition-all ${
+                            isDone
+                              ? `bg-area-${area.color}/5 ring-area-${area.color}/30`
+                              : "bg-card ring-black/5 hover:ring-foreground/30"
+                          }`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div
+                              aria-hidden="true"
+                              className={`grid size-6 shrink-0 place-items-center rounded-md transition-colors ${
+                                isDone
+                                  ? `bg-area-${area.color} text-background`
+                                  : `ring-2 ring-border group-hover:ring-area-${area.color}/40`
+                              }`}
+                            >
+                              {isDone && (
+                                <Check className="size-3.5" strokeWidth={3} />
+                              )}
                             </div>
-                            <span className="mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                              {h.frequency}
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
+                            <div>
+                              <p
+                                className={`text-sm font-medium ${isDone ? "text-muted-foreground line-through" : ""}`}
+                              >
+                                {h.name}
+                              </p>
+                              {h.notes && (
+                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                  {h.notes}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <span className="mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                            {h.frequency}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
               </section>
             );
           })}

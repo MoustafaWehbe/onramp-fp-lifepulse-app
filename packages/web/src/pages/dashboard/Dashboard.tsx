@@ -3,6 +3,11 @@ import { Plus, Flame, TrendingUp, ArrowRight } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { AppShell, PageHeader, AiPanel } from "@/components/app-shell";
 import { useApp, todayStr, type AreaColor } from "@/lib/store";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 
 const COLORS: AreaColor[] = [
@@ -71,12 +76,12 @@ export function Dashboard() {
               value={`${overallPct}%`}
               icon={<TrendingUp className="size-3.5" aria-hidden="true" />}
             />
-            <Link
-              to="/today"
-              className="inline-flex items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
-            >
-              Daily check-in <ArrowRight className="size-3.5" aria-hidden="true" />
-            </Link>
+            <Button asChild>
+              <Link to="/today">
+                Daily check-in{" "}
+                <ArrowRight className="size-3.5" aria-hidden="true" />
+              </Link>
+            </Button>
           </div>
         }
       />
@@ -89,73 +94,70 @@ export function Dashboard() {
           >
             Life areas
           </h2>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             type="button"
             onClick={() => setShowNew((s) => !s)}
             aria-expanded={showNew}
             aria-controls="new-area-form"
-            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium hover:bg-accent"
           >
             <Plus className="size-3" aria-hidden="true" /> New area
-          </button>
+          </Button>
         </div>
 
         {showNew && (
-          <form
+          <Card
             id="new-area-form"
-            onSubmit={create}
-            className="mb-4 rounded-2xl border border-border bg-card p-5"
+            className="mb-4 p-5"
           >
-            <div className="flex flex-col gap-3 md:flex-row md:items-end">
-              <div className="flex-1">
-                <label
-                  htmlFor="new-area-name"
-                  className="mb-1.5 block text-[11px] font-medium uppercase tracking-widest text-muted-foreground"
-                >
-                  Name
-                </label>
-                <input
-                  id="new-area-name"
-                  name="areaName"
-                  required
-                  autoFocus
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g. Fitness"
-                  className="w-full rounded-lg bg-surface px-3 py-2.5 text-sm outline-none ring-1 ring-border focus:ring-foreground"
-                />
-              </div>
-              <fieldset>
-                <legend className="mb-1.5 block text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-                  Colour
-                </legend>
-                <div
-                  className="flex gap-1.5"
-                  role="radiogroup"
-                  aria-label="Area colour"
-                >
-                  {COLORS.map((c) => (
-                    <button
-                      type="button"
-                      key={c}
-                      onClick={() => setNewColor(c)}
-                      role="radio"
-                      aria-checked={newColor === c}
-                      aria-label={c}
-                      className={`size-7 rounded-full bg-area-${c} ring-2 ring-offset-2 ring-offset-card ${newColor === c ? "ring-foreground" : "ring-transparent"}`}
-                    />
-                  ))}
+            <form onSubmit={create}>
+              <div className="flex flex-col gap-3 md:flex-row md:items-end">
+                <div className="flex-1">
+                  <label
+                    htmlFor="new-area-name"
+                    className="mb-1.5 block text-[11px] font-medium uppercase tracking-widest text-muted-foreground"
+                  >
+                    Name
+                  </label>
+                  <Input
+                    id="new-area-name"
+                    name="areaName"
+                    required
+                    autoFocus
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="e.g. Fitness"
+                  />
                 </div>
-              </fieldset>
-              <button
-                type="submit"
-                className="rounded-md bg-foreground px-4 py-2.5 text-sm font-medium text-background hover:opacity-90 disabled:opacity-40"
-                disabled={!newName.trim()}
-              >
-                Create
-              </button>
-            </div>
-          </form>
+                <fieldset>
+                  <legend className="mb-1.5 block text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                    Colour
+                  </legend>
+                  <div
+                    className="flex gap-1.5"
+                    role="radiogroup"
+                    aria-label="Area colour"
+                  >
+                    {COLORS.map((c) => (
+                      <button
+                        type="button"
+                        key={c}
+                        onClick={() => setNewColor(c)}
+                        role="radio"
+                        aria-checked={newColor === c}
+                        aria-label={c}
+                        className={`size-7 rounded-full bg-area-${c} ring-2 ring-offset-2 ring-offset-card ${newColor === c ? "ring-foreground" : "ring-transparent"}`}
+                      />
+                    ))}
+                  </div>
+                </fieldset>
+                <Button type="submit" disabled={!newName.trim()}>
+                  Create
+                </Button>
+              </div>
+            </form>
+          </Card>
         )}
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -174,11 +176,11 @@ export function Dashboard() {
                 className={`group block rounded-2xl bg-card p-6 ring-1 ring-black/5 transition-all hover:ring-area-${area.color}/40`}
               >
                 <div className="mb-8 flex items-center justify-between">
-                  <span
-                    className={`mono rounded px-2 py-1 text-[10px] font-medium uppercase tracking-wider bg-area-${area.color}/10 text-area-${area.color}`}
+                  <Badge
+                    className={`mono border-0 rounded px-2 py-1 text-[10px] font-medium uppercase tracking-wider bg-area-${area.color}/10 text-area-${area.color}`}
                   >
                     {area.name}
-                  </span>
+                  </Badge>
                   <span className="mono text-xs text-muted-foreground">
                     {pct}%
                   </span>
@@ -190,12 +192,12 @@ export function Dashboard() {
                 <p className="mt-1 text-sm text-muted-foreground">
                   {areaDone} of {areaHabits.length} done today
                 </p>
-                <div className="mt-6 h-1 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className={`h-full bg-area-${area.color} transition-all`}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
+                <Progress
+                  value={pct}
+                  indicatorClassName={`bg-area-${area.color}`}
+                  className="mt-6 h-1"
+                  aria-label={`${area.name} today progress`}
+                />
               </Link>
             );
           })}
@@ -232,9 +234,9 @@ export function Dashboard() {
                         (c) => c.habitId === h.id && c.date === today,
                       );
                       return (
-                        <div
+                        <Card
                           key={h.id}
-                          className="flex items-center justify-between rounded-lg bg-card p-3 ring-1 ring-black/5"
+                          className="flex items-center justify-between p-3"
                         >
                           <div className="flex items-center gap-3">
                             <div
@@ -253,7 +255,7 @@ export function Dashboard() {
                           <span className="mono text-[10px] uppercase tracking-wider text-muted-foreground">
                             {h.frequency}
                           </span>
-                        </div>
+                        </Card>
                       );
                     })}
                   </div>
