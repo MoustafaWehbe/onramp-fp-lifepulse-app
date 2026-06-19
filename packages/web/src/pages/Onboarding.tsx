@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
 import { useApp, type AreaColor } from "@/lib/store";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const GOALS = [
@@ -26,8 +27,9 @@ const AREA_PRESETS: { name: string; color: AreaColor }[] = [
 export function Onboarding() {
   const navigate = useNavigate();
   const { setProfile, addArea } = useApp();
+  const { user } = useAuth();
   const [step, setStep] = useState(0);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(user?.name ?? "");
   const [age, setAge] = useState<number | "">("");
   const [job, setJob] = useState("");
   const [goals, setGoals] = useState<string[]>([]);
@@ -71,8 +73,8 @@ export function Onboarding() {
 
   const finish = () => {
     setProfile({
-      name: name.trim() || "Friend",
-      email: "you@example.com",
+      name: name.trim() || user?.name || "Friend",
+      email: user?.email ?? "you@example.com",
       age: typeof age === "number" ? age : undefined,
       jobTitle: job.trim(),
       goals,

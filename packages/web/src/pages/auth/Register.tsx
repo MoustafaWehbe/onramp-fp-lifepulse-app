@@ -19,7 +19,7 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export function Register() {
-  const { register: registerUser } = useAuth();
+  const { register: registerUser, login } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +35,10 @@ export function Register() {
     try {
       setError(null);
       await registerUser(data.email, data.password, data.name);
-      navigate("/login");
+      // Auto-login right after register so the user lands on onboarding
+      // instead of being bounced to the login page
+      await login(data.email, data.password);
+      navigate("/onboarding");
     } catch {
       setError("Registration failed. That email may already be in use.");
     }
