@@ -2,47 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
+:root {
+  --radius: 0.875rem;
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
-  }
+  --background: oklch(0.99 0.003 95);
+  --foreground: oklch(0.18 0.005 270);
+
+  --surface: oklch(0.985 0.003 95);
+  --surface-elevated: oklch(1 0 0);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.005 270);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.005 270);
+
+  --primary: oklch(0.18 0.005 270);
+  --primary-foreground: oklch(0.99 0.003 95);
+
+  --secondary: oklch(0.96 0.004 100);
+  --secondary-foreground: oklch(0.18 0.005 270);
+
+  --muted: oklch(0.96 0.004 100);
+  --muted-foreground: oklch(0.5 0.01 270);
+
+  --accent: oklch(0.95 0.005 100);
+  --accent-foreground: oklch(0.18 0.005 270);
+
+  --destructive: oklch(0.6 0.22 25);
+  --destructive-foreground: oklch(0.99 0.003 95);
+
+  --border: oklch(0.92 0.004 100);
+  --input: oklch(0.92 0.004 100);
+  --ring: oklch(0.5 0.01 270);
+
+  --area-health: oklch(0.68 0.13 160);
+  --area-career: oklch(0.6 0.14 250);
+  --area-spirit: oklch(0.62 0.16 295);
+  --area-social: oklch(0.74 0.13 65);
+  --area-learning: oklch(0.65 0.13 30);
+  --area-creative: oklch(0.66 0.14 340);
+}
+
+.dark {
+  --background: oklch(0.14 0.005 270);
+  --foreground: oklch(0.97 0.003 95);
+  --surface: oklch(0.16 0.005 270);
+  --surface-elevated: oklch(0.19 0.005 270);
+  --card: oklch(0.19 0.005 270);
+  --card-foreground: oklch(0.97 0.003 95);
+  --popover: oklch(0.19 0.005 270);
+  --popover-foreground: oklch(0.97 0.003 95);
+  --primary: oklch(0.97 0.003 95);
+  --primary-foreground: oklch(0.18 0.005 270);
+  --secondary: oklch(0.24 0.005 270);
+  --secondary-foreground: oklch(0.97 0.003 95);
+  --muted: oklch(0.24 0.005 270);
+  --muted-foreground: oklch(0.65 0.01 270);
+  --accent: oklch(0.24 0.005 270);
+  --accent-foreground: oklch(0.97 0.003 95);
+  --border: oklch(0.27 0.005 270);
+  --input: oklch(0.27 0.005 270);
+  --ring: oklch(0.65 0.01 270);
 }
 
 @layer base {
@@ -50,8 +70,48 @@
     @apply border-border;
   }
 
+  html,
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: 'rlig' 1, 'calt' 1;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  :where(a, button, input, select, textarea, [role="button"], [role="checkbox"]):focus-visible {
+    outline: 2px solid var(--foreground);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  .mono {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  .skip-link {
+    position: absolute;
+    left: 1rem;
+    top: -3rem;
+    z-index: 100;
+    border-radius: 0.5rem;
+    background: var(--foreground);
+    color: var(--background);
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    transition: top 0.15s ease;
+  }
+
+  .skip-link:focus {
+    top: 1rem;
   }
 }

@@ -4,17 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "../../hooks/useAuth";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../../components/ui/card";
+import { ArrowRight } from "lucide-react";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -52,66 +42,131 @@ export function Register() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Create an account</CardTitle>
-        <CardDescription>
-          Fill in the details below to get started
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
-          {error && (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </p>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" placeholder="Alice Smith" {...register("name")} />
-            {errors.name && (
-              <p className="text-xs text-destructive">{errors.name.message}</p>
-            )}
+    <div className="min-h-screen bg-surface">
+      <div className="mx-auto max-w-md px-6 py-16">
+        <div className="mb-10 flex items-center justify-center gap-2">
+          <div
+            className="grid size-8 place-items-center rounded-md bg-foreground text-background"
+            aria-hidden="true"
+          >
+            <span className="mono text-xs font-bold">K</span>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              {...register("email")}
-            />
-            {errors.email && (
-              <p className="text-xs text-destructive">{errors.email.message}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              {...register("password")}
-            />
-            {errors.password && (
-              <p className="text-xs text-destructive">
-                {errors.password.message}
+          <span className="text-lg font-extrabold tracking-tight">KULTIVAR</span>
+        </div>
+
+        <div className="rounded-3xl bg-card p-8 ring-1 ring-black/5">
+          <h1 className="text-2xl font-extrabold tracking-tight">
+            Create an account
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Start cultivating the life areas that matter to you.
+          </p>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
+            {error && (
+              <p
+                className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                role="alert"
+              >
+                {error}
               </p>
             )}
-          </div>
-        </CardContent>
-        <CardFooter className="flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Creating account…" : "Create account"}
-          </Button>
-          <p className="text-sm text-muted-foreground">
+
+            <div>
+              <label
+                htmlFor="name"
+                className="mb-2 block text-[11px] font-medium uppercase tracking-widest text-muted-foreground"
+              >
+                Name
+              </label>
+              <input
+                id="name"
+                autoComplete="name"
+                placeholder="Elena Rivers"
+                className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-none ring-1 ring-border focus:ring-foreground"
+                {...register("name")}
+              />
+              {errors.name && (
+                <p className="mt-1.5 text-xs text-destructive">
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="email"
+                className="mb-2 block text-[11px] font-medium uppercase tracking-widest text-muted-foreground"
+              >
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-none ring-1 ring-border focus:ring-foreground"
+                {...register("email")}
+              />
+              {errors.email && (
+                <p className="mt-1.5 text-xs text-destructive">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-2 block text-[11px] font-medium uppercase tracking-widest text-muted-foreground"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                autoComplete="new-password"
+                placeholder="••••••••"
+                className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-none ring-1 ring-border focus:ring-foreground"
+                {...register("password")}
+              />
+              {errors.password && (
+                <p className="mt-1.5 text-xs text-destructive">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-foreground px-5 py-3 text-sm font-medium text-background hover:opacity-90 disabled:opacity-40"
+            >
+              {isSubmitting ? "Creating account…" : "Create account"}
+              {!isSubmitting && <ArrowRight className="size-4" />}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link to="/login" className="text-primary hover:underline">
+            <Link
+              to="/login"
+              className="font-medium text-foreground hover:underline"
+            >
               Sign in
             </Link>
           </p>
-        </CardFooter>
-      </form>
-    </Card>
+        </div>
+
+        <p className="mt-8 text-center">
+          <Link
+            to="/"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            ← Back to home
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 }

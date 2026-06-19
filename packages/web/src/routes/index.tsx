@@ -1,29 +1,36 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
-import { AppLayout } from "../layouts/AppLayout";
-import { AuthLayout } from "../layouts/AuthLayout";
+import { GuestRoute } from "./GuestRoute";
+import { Landing } from "../pages/Landing";
 import { Login } from "../pages/auth/Login";
 import { Register } from "../pages/auth/Register";
 import { Dashboard } from "../pages/dashboard/Dashboard";
-import { Settings } from "../pages/dashboard/Settings";
+import { TodayPage } from "../pages/Today";
+import { ProgressPage } from "../pages/Progress";
+import { ProfilePage } from "../pages/Profile";
+import { Onboarding } from "../pages/Onboarding";
+import { AreaDetail } from "../pages/AreaDetail";
 import { NotFound } from "../pages/NotFound";
 
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Public auth routes */}
-      <Route element={<AuthLayout />}>
+      {/* Public */}
+      <Route path="/" element={<Landing />} />
+
+      <Route element={<GuestRoute />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Route>
 
-      {/* Protected app routes */}
+      {/* Protected app */}
       <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/settings" element={<Settings />} />
-        </Route>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/today" element={<TodayPage />} />
+        <Route path="/progress" element={<ProgressPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/areas/:id" element={<AreaDetail />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
