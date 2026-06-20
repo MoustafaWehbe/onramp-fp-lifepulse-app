@@ -1,78 +1,116 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   --radius: 0.875rem;
 
-  --background: oklch(0.99 0.003 95);
-  --foreground: oklch(0.18 0.005 270);
+  --background: oklch(0.97 0.01 95); /* #f7f6f3 */
+  --foreground: oklch(34.117% 0.05684 156.71); /* deep green-tinted dark, not pure black */
 
-  --surface: oklch(0.985 0.003 95);
+  --surface: oklch(0.98 0.005 95);
   --surface-elevated: oklch(1 0 0);
 
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.005 270);
+  --card-foreground: oklch(28.992% 0.02999 159.536);
+
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.005 270);
+  --popover-foreground: oklch(28.992% 0.02999 159.536);
 
-  --primary: oklch(0.18 0.005 270);
-  --primary-foreground: oklch(0.99 0.003 95);
+  /* Brand — lifted from 0.38 → 0.46 so buttons/icons breathe */
+  --primary: oklch(0.46 0.08 170); /* teal-green, grounded not dark */
+  --primary-foreground: oklch(0.99 0 0);
 
-  --secondary: oklch(0.96 0.004 100);
-  --secondary-foreground: oklch(0.18 0.005 270);
+  --primary-hover: oklch(0.52 0.08 170);
+  --primary-active: oklch(0.40 0.08 170);
 
-  --muted: oklch(0.96 0.004 100);
-  --muted-foreground: oklch(0.5 0.01 270);
+  /* Success — lighter, friendlier green */
+  --success: oklch(0.68 0.11 150);
+  --success-foreground: oklch(0.99 0 0);
 
-  --accent: oklch(0.95 0.005 100);
-  --accent-foreground: oklch(0.18 0.005 270);
+  /* Secondary / muted / accent — very light sage */
+  --secondary: oklch(0.93 0.02 155);
+  --secondary-foreground: oklch(28.992% 0.02999 159.536);
 
-  --destructive: oklch(0.6 0.22 25);
-  --destructive-foreground: oklch(0.99 0.003 95);
+  --muted: oklch(0.93 0.02 155);
+  --muted-foreground: oklch(52% 0.02 160);
 
-  --border: oklch(0.92 0.004 100);
-  --input: oklch(0.92 0.004 100);
-  --ring: oklch(0.5 0.01 270);
+  --accent: oklch(0.93 0.02 155);
+  --accent-foreground: oklch(28.992% 0.02999 159.536);
 
-  --area-health: oklch(0.68 0.13 160);
-  --area-career: oklch(0.6 0.14 250);
-  --area-spirit: oklch(0.62 0.16 295);
-  --area-social: oklch(0.74 0.13 65);
-  --area-learning: oklch(0.65 0.13 30);
-  --area-creative: oklch(0.66 0.14 340);
+  --destructive: oklch(0.62 0.20 25);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  --border: oklch(0.90 0.008 100);
+  --input: oklch(0.90 0.008 100);
+
+  --ring: oklch(0.46 0.08 170);
+
+  /* Life Areas — each hue clearly distinct, all lifted to 0.72–0.78 lightness
+     so they read as fresh accent colours, not heavy category blocks */
+  --area-health:   oklch(0.72 0.14 155); /* fresh teal-green */
+  --area-career:   oklch(0.72 0.13 245); /* clear blue */
+  --area-spirit:   oklch(0.72 0.14 290); /* soft violet */
+  --area-social:   oklch(0.76 0.14 60);  /* warm amber */
+  --area-learning: oklch(0.74 0.13 35);  /* terracotta-orange */
+  --area-creative: oklch(0.74 0.14 335); /* dusty rose */
 }
 
 .dark {
-  --background: oklch(0.14 0.005 270);
+  --background: oklch(0.18 0.01 170);
   --foreground: oklch(0.97 0.003 95);
-  --surface: oklch(0.16 0.005 270);
-  --surface-elevated: oklch(0.19 0.005 270);
-  --card: oklch(0.19 0.005 270);
+
+  --surface: oklch(0.22 0.01 170);
+  --surface-elevated: oklch(0.26 0.01 170);
+
+  --card: oklch(0.26 0.01 170);
   --card-foreground: oklch(0.97 0.003 95);
-  --popover: oklch(0.19 0.005 270);
+
+  --popover: oklch(0.26 0.01 170);
   --popover-foreground: oklch(0.97 0.003 95);
-  --primary: oklch(0.97 0.003 95);
-  --primary-foreground: oklch(0.18 0.005 270);
-  --secondary: oklch(0.24 0.005 270);
+
+  --primary: oklch(0.65 0.08 170);
+  --primary-foreground: oklch(0.18 0.01 170);
+
+  --primary-hover: oklch(0.72 0.08 170);
+  --primary-active: oklch(0.58 0.08 170);
+
+  --success: oklch(0.74 0.11 150);
+  --success-foreground: oklch(0.18 0.01 170);
+
+  --secondary: oklch(0.31 0.01 170);
   --secondary-foreground: oklch(0.97 0.003 95);
-  --muted: oklch(0.24 0.005 270);
-  --muted-foreground: oklch(0.65 0.01 270);
-  --accent: oklch(0.24 0.005 270);
+
+  --muted: oklch(0.31 0.01 170);
+  --muted-foreground: oklch(0.75 0.01 170);
+
+  --accent: oklch(0.31 0.01 170);
   --accent-foreground: oklch(0.97 0.003 95);
-  --border: oklch(0.27 0.005 270);
-  --input: oklch(0.27 0.005 270);
-  --ring: oklch(0.65 0.01 270);
+
+  --border: oklch(0.36 0.01 170);
+  --input: oklch(0.36 0.01 170);
+
+  --ring: oklch(0.65 0.08 170);
+
+  /* Life areas in dark mode — slightly deeper so they don't blow out on dark cards */
+  --area-health:   oklch(0.64 0.14 155);
+  --area-career:   oklch(0.64 0.13 245);
+  --area-spirit:   oklch(0.64 0.14 290);
+  --area-social:   oklch(0.68 0.14 60);
+  --area-learning: oklch(0.66 0.13 35);
+  --area-creative: oklch(0.66 0.14 335);
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: var(--border);
   }
 
   html,
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   :where(a, button, input, select, textarea, [role="button"], [role="checkbox"]):focus-visible {
