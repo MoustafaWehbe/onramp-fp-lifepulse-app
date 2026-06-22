@@ -1,6 +1,9 @@
 import { useMemo } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
+import { AreaDot } from "@/components/area/area-dot";
 import { useApp, todayStr } from "@/lib/store";
+import { areaTokens } from "@/lib/area-colors";
+import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { Check } from "lucide-react";
 
@@ -64,15 +67,13 @@ export function TodayPage() {
             const areaDone = items.filter((h) =>
               checkins.some((c) => c.habitId === h.id && c.date === today),
             ).length;
+            const t = areaTokens[area.color];
             return (
               <section key={area.id} aria-labelledby={`area-${area.id}-heading`}>
                 <div className="mb-5 flex items-center gap-3">
                   <Separator className="flex-1" />
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`size-2 rounded-full bg-area-${area.color}`}
-                      aria-hidden="true"
-                    />
+                    <AreaDot color={area.color} className="size-2" />
                     <h2
                       id={`area-${area.id}-heading`}
                       className="text-xs font-semibold"
@@ -102,20 +103,22 @@ export function TodayPage() {
                           aria-checked={isDone}
                           aria-label={`${h.name}, ${h.frequency}, ${isDone ? "completed" : "not completed"}`}
                           onClick={() => toggleCheckin(h.id, today)}
-                          className={`group flex w-full items-center justify-between rounded-xl p-4 text-left ring-1 transition-all ${
+                          className={cn(
+                            "group flex w-full items-center justify-between rounded-xl p-4 text-left ring-1 transition-all",
                             isDone
-                              ? `bg-area-${area.color}/5 ring-area-${area.color}/30`
-                              : "bg-card ring-black/5 hover:ring-foreground/30"
-                          }`}
+                              ? cn(t.bgFaint, t.ring)
+                              : "bg-card ring-black/5 hover:ring-foreground/30",
+                          )}
                         >
                           <div className="flex items-center gap-4">
                             <div
                               aria-hidden="true"
-                              className={`grid size-6 shrink-0 place-items-center rounded-md transition-colors ${
+                              className={cn(
+                                "grid size-6 shrink-0 place-items-center rounded-md transition-colors",
                                 isDone
-                                  ? `bg-area-${area.color} text-background`
-                                  : `ring-2 ring-border group-hover:ring-area-${area.color}/40`
-                              }`}
+                                  ? cn(t.bg, "text-background")
+                                  : cn("ring-2 ring-border", t.ringHover),
+                              )}
                             >
                               {isDone && (
                                 <Check className="size-3.5" strokeWidth={3} />

@@ -9,6 +9,9 @@ import {
   LogOut,
 } from "lucide-react";
 import { useApp } from "@/lib/store";
+import { areaTokens } from "@/lib/area-colors";
+import { AreaDot } from "@/components/area/area-dot";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import type { ReactNode } from "react";
 
@@ -104,17 +107,20 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ul className="space-y-0.5">
               {areas.map((a) => {
                 const active = pathname === `/areas/${a.id}`;
+                const t = areaTokens[a.color];
                 return (
                   <li key={a.id}>
                     <Link
                       to={`/areas/${a.id}`}
                       aria-current={active ? "page" : undefined}
-                      className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm transition-colors ${active ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"}`}
+                      className={cn(
+                        "flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm transition-colors",
+                        active
+                          ? t.navItemActive
+                          : cn("text-muted-foreground", t.navItemHover),
+                      )}
                     >
-                      <span
-                        className={`size-2 rounded-full bg-area-${a.color}`}
-                        aria-hidden="true"
-                      />
+                      <AreaDot color={a.color} className="size-2" />
                       {a.name}
                     </Link>
                   </li>
@@ -193,10 +199,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 export function PageHeader({
   eyebrow,
   title,
+  titleClassName,
   action,
 }: {
   eyebrow?: string;
   title: string;
+  titleClassName?: string;
   action?: ReactNode;
 }) {
   return (
@@ -207,7 +215,14 @@ export function PageHeader({
             {eyebrow}
           </p>
         )}
-        <h1 className="text-4xl font-extrabold tracking-tight">{title}</h1>
+        <h1
+          className={cn(
+            "text-4xl font-extrabold tracking-tight",
+            titleClassName,
+          )}
+        >
+          {title}
+        </h1>
       </div>
       {action}
     </header>
@@ -219,7 +234,7 @@ export function AiPanel() {
     <div className="rounded-2xl bg-foreground p-6 text-background">
       <div className="mb-4 flex items-center gap-2">
         <div
-          className="size-1.5 animate-pulse rounded-full bg-area-spirit"
+          className={`size-1.5 animate-pulse rounded-full ${areaTokens.spirit.bg}`}
           aria-hidden="true"
         />
         <span className="mono text-[10px] font-medium uppercase tracking-widest text-background/60">
@@ -228,7 +243,7 @@ export function AiPanel() {
       </div>
       <div className="mb-4 flex items-start gap-3">
         <Sparkles
-          className="size-5 shrink-0 text-area-spirit"
+          className={`size-5 shrink-0 ${areaTokens.spirit.text}`}
           aria-hidden="true"
         />
         <div>

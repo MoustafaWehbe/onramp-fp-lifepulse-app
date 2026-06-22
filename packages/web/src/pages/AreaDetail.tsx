@@ -2,12 +2,15 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useState, type FormEvent } from "react";
 import { Plus, Trash2, ArrowLeft, Check } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/app-shell";
+import { AreaProgress } from "@/components/area/area-progress";
+import { AreaPct } from "@/components/area/area-badge";
 import { useApp, todayStr, type Frequency } from "@/lib/store";
+import { areaStyle, areaTokens } from "@/lib/area-colors";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 
@@ -57,6 +60,8 @@ export function AreaDetail() {
     ? Math.round((done / areaHabits.length) * 100)
     : 0;
 
+  const t = areaTokens[area.color];
+
   const nameError = touched && !name.trim() ? "Habit name is required." : "";
 
   const create = (e: FormEvent) => {
@@ -94,15 +99,14 @@ export function AreaDetail() {
       <PageHeader
         eyebrow={`Life area • ${areaHabits.length} habit${areaHabits.length === 1 ? "" : "s"}`}
         title={area.name}
+        titleClassName={t.text}
         action={
           <div className="flex items-center gap-6">
             <div className="text-right">
               <div className="mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 Today
               </div>
-              <div className="text-3xl font-extrabold tracking-tight">
-                {pct}%
-              </div>
+              <AreaPct value={pct} color={area.color} className="text-3xl font-extrabold tracking-tight" />
             </div>
             <ConfirmDialog
               title={`Delete "${area.name}"?`}
@@ -121,9 +125,9 @@ export function AreaDetail() {
         }
       />
 
-      <Progress
+      <AreaProgress
         value={pct}
-        indicatorClassName={`bg-area-${area.color}`}
+        color={area.color}
         className="mb-10 h-1"
         aria-label={`${area.name} completion today`}
       />
@@ -154,11 +158,12 @@ export function AreaDetail() {
                           aria-checked={isDone}
                           aria-label={`Toggle ${h.name}`}
                           onClick={() => toggleCheckin(h.id, today)}
-                          className={`grid size-6 shrink-0 place-items-center rounded-md transition-colors ${
+                          className={cn(
+                            "grid size-6 shrink-0 place-items-center rounded-md transition-colors",
                             isDone
-                              ? `bg-area-${area.color} text-background`
-                              : "ring-2 ring-border hover:ring-foreground/40"
-                          }`}
+                              ? cn(t.bg, "text-background")
+                              : "ring-2 ring-border hover:ring-foreground/40",
+                          )}
                         >
                           {isDone && (
                             <Check
@@ -268,11 +273,12 @@ export function AreaDetail() {
                         key={f.value}
                         onClick={() => setFreq(f.value)}
                         aria-pressed={freq === f.value}
-                        className={`rounded-md px-3 py-2 text-xs font-medium ring-1 transition-colors ${
+                        className={cn(
+                          "rounded-md px-3 py-2 text-xs font-medium ring-1 transition-colors",
                           freq === f.value
-                            ? `bg-area-${area.color}/10 ring-area-${area.color} text-area-${area.color}`
-                            : "bg-surface ring-border hover:bg-accent"
-                        }`}
+                            ? cn(t.bgSoft, t.ringSolid, t.text)
+                            : "bg-surface ring-border hover:bg-accent",
+                        )}
                       >
                         {f.label}
                       </button>
@@ -294,13 +300,14 @@ export function AreaDetail() {
                     onChange={(e) => setNotes(e.target.value)}
                     rows={2}
                     placeholder="Anything that helps you stick with this"
-                    className="w-full resize-none rounded-lg bg-surface px-3 py-2.5 text-sm outline-none ring-1 ring-border placeholder:text-muted-foreground focus:ring-foreground"
+                    className="w-full resize-none rounded-lg bg-surface px-3 py-2.5 text-sm outline-hidden ring-1 ring-border placeholder:text-muted-foreground focus:ring-foreground"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className={`flex w-full items-center justify-center gap-2 rounded-md bg-area-${area.color} px-4 py-2.5 text-sm font-medium text-background hover:opacity-90 transition-opacity`}
+                  className="flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
+                  style={areaStyle(area.color)}
                 >
                   <Plus className="size-4" aria-hidden="true" /> Add habit
                 </button>

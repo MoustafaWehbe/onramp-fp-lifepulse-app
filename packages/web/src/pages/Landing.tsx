@@ -1,5 +1,20 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { AreaBadge, AreaPct } from "@/components/area/area-badge";
+import { AreaProgress } from "@/components/area/area-progress";
+import { areaTokens, type AreaColor } from "@/lib/area-colors";
+
+const DEMO_AREAS: {
+  color: AreaColor;
+  title: string;
+  description: string;
+  pct: number;
+}[] = [
+  { color: "health", title: "Health", description: "Body, energy, sleep.", pct: 72 },
+  { color: "career", title: "Career", description: "Deep work and growth.", pct: 58 },
+  { color: "spirit", title: "Mind", description: "Stillness, reflection.", pct: 84 },
+  { color: "social", title: "Social", description: "People who matter.", pct: 41 },
+];
 
 export function Landing() {
   return (
@@ -34,7 +49,7 @@ export function Landing() {
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-20 lg:pt-32">
         <div className="max-w-3xl">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
-            <Sparkles className="size-3 text-area-spirit" />
+            <Sparkles className={`size-3 ${areaTokens.spirit.text}`} />
             <span className="mono text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
               AI habit recommendations
             </span>
@@ -65,41 +80,25 @@ export function Landing() {
         </div>
 
         <div className="mt-24 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[
-            { c: "health", t: "Health", d: "Body, energy, sleep.", pct: 72 },
-            { c: "career", t: "Career", d: "Deep work and growth.", pct: 58 },
-            { c: "spirit", t: "Mind", d: "Stillness, reflection.", pct: 84 },
-            { c: "social", t: "Social", d: "People who matter.", pct: 41 },
-          ].map((a) => (
+          {DEMO_AREAS.map((a) => (
             <div
-              key={a.t}
+              key={a.title}
               className="rounded-2xl bg-card p-6 ring-1 ring-black/5"
             >
               <div className="mb-8 flex items-center justify-between">
-                <span
-                  className={`mono rounded px-2 py-1 text-[10px] font-medium uppercase tracking-wider bg-area-${a.c}/10 text-area-${a.c}`}
-                >
-                  {a.t}
-                </span>
-                <span className="mono text-xs text-muted-foreground">
-                  {a.pct}%
-                </span>
+                <AreaBadge color={a.color}>{a.title}</AreaBadge>
+                <AreaPct value={a.pct} color={a.color} />
               </div>
-              <h3 className="text-lg font-bold">{a.t}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{a.d}</p>
-              <div
-                className="mt-6 h-1 w-full overflow-hidden rounded-full bg-muted"
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={a.pct}
-                aria-label={`${a.t} sample completion`}
-              >
-                <div
-                  className={`h-full bg-area-${a.c}`}
-                  style={{ width: `${a.pct}%` }}
-                />
-              </div>
+              <h3 className="text-lg font-bold">{a.title}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {a.description}
+              </p>
+              <AreaProgress
+                value={a.pct}
+                color={a.color}
+                className="mt-6 h-1"
+                aria-label={`${a.title} sample completion`}
+              />
             </div>
           ))}
         </div>

@@ -6,13 +6,9 @@ import {
   type ReactNode,
 } from "react";
 
-export type AreaColor =
-  | "health"
-  | "career"
-  | "spirit"
-  | "social"
-  | "learning"
-  | "creative";
+export type { AreaColor } from "./area-colors";
+export { AREA_COLOR_MAP } from "./area-colors";
+import type { AreaColor } from "./area-colors";
 
 export interface LifeArea {
   id: string;
@@ -298,53 +294,5 @@ export function useApp() {
   if (!v) throw new Error("useApp must be used within AppStateProvider");
   return v;
 }
-
-export const AREA_COLOR_MAP: Record<
-  AreaColor,
-  { bg: string; bgSoft: string; text: string; ring: string; raw: string }
-> = {
-  health: {
-    bg: "bg-area-health",
-    bgSoft: "bg-area-health/10",
-    text: "text-area-health",
-    ring: "ring-area-health/30",
-    raw: "var(--area-health)",
-  },
-  career: {
-    bg: "bg-area-career",
-    bgSoft: "bg-area-career/10",
-    text: "text-area-career",
-    ring: "ring-area-career/30",
-    raw: "var(--area-career)",
-  },
-  spirit: {
-    bg: "bg-area-spirit",
-    bgSoft: "bg-area-spirit/10",
-    text: "text-area-spirit",
-    ring: "ring-area-spirit/30",
-    raw: "var(--area-spirit)",
-  },
-  social: {
-    bg: "bg-area-social",
-    bgSoft: "bg-area-social/10",
-    text: "text-area-social",
-    ring: "ring-area-social/30",
-    raw: "var(--area-social)",
-  },
-  learning: {
-    bg: "bg-area-learning",
-    bgSoft: "bg-area-learning/10",
-    text: "text-area-learning",
-    ring: "ring-area-learning/30",
-    raw: "var(--area-learning)",
-  },
-  creative: {
-    bg: "bg-area-creative",
-    bgSoft: "bg-area-creative/10",
-    text: "text-area-creative",
-    ring: "ring-area-creative/30",
-    raw: "var(--area-creative)",
-  },
-};
 
 export const todayStr = () => new Date().toISOString().slice(0, 10);

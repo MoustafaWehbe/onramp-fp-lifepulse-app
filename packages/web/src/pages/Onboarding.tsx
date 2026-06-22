@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
-import { useApp, type AreaColor } from "@/lib/store";
+import { useApp } from "@/lib/store";
+import { AREA_PRESETS, areaTokens } from "@/lib/area-colors";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -14,14 +16,6 @@ const GOALS = [
   "Creative Mastery",
   "Stronger Relationships",
   "Learning",
-];
-const AREA_PRESETS: { name: string; color: AreaColor }[] = [
-  { name: "Health", color: "health" },
-  { name: "Career", color: "career" },
-  { name: "Mind", color: "spirit" },
-  { name: "Social", color: "social" },
-  { name: "Learning", color: "learning" },
-  { name: "Creative", color: "creative" },
 ];
 
 export function Onboarding() {
@@ -169,7 +163,7 @@ export function Onboarding() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Elena Rivers"
-                    className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-none ring-1 ring-border focus:ring-foreground"
+                    className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-hidden ring-1 ring-border focus:ring-foreground"
                   />
                 </Field>
                 <Field label="Age" htmlFor="ob-age" error={ageError}>
@@ -186,7 +180,7 @@ export function Onboarding() {
                       setAge(e.target.value ? Number(e.target.value) : "")
                     }
                     placeholder="31"
-                    className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-none ring-1 ring-border focus:ring-foreground"
+                    className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-hidden ring-1 ring-border focus:ring-foreground"
                   />
                 </Field>
                 <Field label="Job title" htmlFor="ob-job">
@@ -197,7 +191,7 @@ export function Onboarding() {
                     value={job}
                     onChange={(e) => setJob(e.target.value)}
                     placeholder="Senior Designer"
-                    className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-none ring-1 ring-border focus:ring-foreground"
+                    className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-hidden ring-1 ring-border focus:ring-foreground"
                   />
                 </Field>
               </div>
@@ -313,16 +307,20 @@ export function Onboarding() {
               >
                 {AREA_PRESETS.map((a) => {
                   const on = selectedAreas.includes(a.name);
+                  const t = areaTokens[a.color];
                   return (
                     <button
                       type="button"
                       key={a.name}
                       onClick={() => toggleArea(a.name)}
                       aria-pressed={on}
-                      className={`group flex items-center gap-3 rounded-xl p-4 text-left ring-1 transition-all ${on ? `ring-area-${a.color}` : "ring-border hover:ring-foreground/30"}`}
+                      className={cn(
+                        "group flex items-center gap-3 rounded-xl p-4 text-left ring-1 transition-all",
+                        on ? t.ringSolid : "ring-border hover:ring-foreground/30",
+                      )}
                     >
                       <span
-                        className={`size-3 rounded-full bg-area-${a.color}`}
+                        className={cn("size-3 rounded-full", t.bg)}
                         aria-hidden="true"
                       />
                       <span className="flex-1 text-sm font-medium">
@@ -330,7 +328,7 @@ export function Onboarding() {
                       </span>
                       {on && (
                         <Check
-                          className={`size-4 text-area-${a.color}`}
+                          className={cn("size-4", t.text)}
                           aria-hidden="true"
                         />
                       )}
@@ -346,7 +344,7 @@ export function Onboarding() {
 
               <div className="mt-10 flex gap-3 rounded-2xl bg-foreground p-5 text-background">
                 <Sparkles
-                  className="size-5 shrink-0 text-area-spirit"
+                  className={`size-5 shrink-0 ${areaTokens.spirit.text}`}
                   aria-hidden="true"
                 />
                 <div>

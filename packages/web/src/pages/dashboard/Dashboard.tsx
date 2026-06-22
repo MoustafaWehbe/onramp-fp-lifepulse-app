@@ -2,22 +2,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { Plus, Flame, TrendingUp, ArrowRight } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { AppShell, PageHeader, AiPanel } from "@/components/app-shell";
-import { useApp, todayStr, type AreaColor } from "@/lib/store";
+import { AreaBadge, AreaPct } from "@/components/area/area-badge";
+import { AreaDot } from "@/components/area/area-dot";
+import { AreaProgress } from "@/components/area/area-progress";
+import { useApp, todayStr } from "@/lib/store";
+import { AREA_COLORS, areaTokens, type AreaColor } from "@/lib/area-colors";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-
-const COLORS: AreaColor[] = [
-  "health",
-  "career",
-  "spirit",
-  "social",
-  "learning",
-  "creative",
-];
 
 export function Dashboard() {
   const { areas, habits, checkins, addArea } = useApp();
@@ -107,10 +101,7 @@ export function Dashboard() {
         </div>
 
         {showNew && (
-          <Card
-            id="new-area-form"
-            className="mb-4 p-5"
-          >
+          <Card id="new-area-form" className="mb-4 p-5">
             <form onSubmit={create}>
               <div className="flex flex-col gap-3 md:flex-row md:items-end">
                 <div className="flex-1">
@@ -139,7 +130,7 @@ export function Dashboard() {
                     role="radiogroup"
                     aria-label="Area colour"
                   >
-                    {COLORS.map((c) => (
+                    {AREA_COLORS.map((c) => (
                       <button
                         type="button"
                         key={c}
@@ -147,7 +138,13 @@ export function Dashboard() {
                         role="radio"
                         aria-checked={newColor === c}
                         aria-label={c}
-                        className={`size-7 rounded-full bg-area-${c} ring-2 ring-offset-2 ring-offset-card ${newColor === c ? "ring-foreground" : "ring-transparent"}`}
+                        className={cn(
+                          "size-7 rounded-full ring-2 ring-offset-2 ring-offset-card",
+                          areaTokens[c].bg,
+                          newColor === c
+                            ? "ring-foreground"
+                            : "ring-transparent",
+                        )}
                       />
                     ))}
                   </div>
@@ -162,6 +159,7 @@ export function Dashboard() {
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {areas.map((area) => {
+            const t = areaTokens[area.color];
             const areaHabits = habits.filter((h) => h.areaId === area.id);
             const areaDone = areaHabits.filter((h) =>
               checkins.some((c) => c.habitId === h.id && c.date === today),
@@ -173,17 +171,15 @@ export function Dashboard() {
               <Link
                 key={area.id}
                 to={`/areas/${area.id}`}
-                className={`group block rounded-2xl bg-card p-6 ring-1 ring-black/5 transition-all hover:ring-area-${area.color}/40`}
+                className={cn(
+                  "block rounded-2xl bg-card p-6 ring-1 ring-black/5 transition-all duration-200",
+                  t.hoverCardRing,
+                  t.hoverCardBg,
+                )}
               >
                 <div className="mb-8 flex items-center justify-between">
-                  <Badge
-                    className={`mono border-0 rounded px-2 py-1 text-[10px] font-medium uppercase tracking-wider bg-area-${area.color}/10 text-area-${area.color}`}
-                  >
-                    {area.name}
-                  </Badge>
-                  <span className="mono text-xs text-muted-foreground">
-                    {pct}%
-                  </span>
+                  <AreaBadge color={area.color}>{area.name}</AreaBadge>
+                  <AreaPct value={pct} color={area.color} />
                 </div>
                 <h3 className="text-lg font-bold">
                   {areaHabits.length} habit
@@ -192,9 +188,9 @@ export function Dashboard() {
                 <p className="mt-1 text-sm text-muted-foreground">
                   {areaDone} of {areaHabits.length} done today
                 </p>
-                <Progress
+                <AreaProgress
                   value={pct}
-                  indicatorClassName={`bg-area-${area.color}`}
+                  color={area.color}
                   className="mt-6 h-1"
                   aria-label={`${area.name} today progress`}
                 />
@@ -218,14 +214,13 @@ export function Dashboard() {
           </h2>
           <div className="space-y-6">
             {areas.map((area) => {
+              const t = areaTokens[area.color];
               const areaHabits = habits.filter((h) => h.areaId === area.id);
               if (areaHabits.length === 0) return null;
               return (
                 <div key={area.id}>
                   <div className="mb-2.5 flex items-center gap-2">
-                    <span
-                      className={`size-1.5 rounded-full bg-area-${area.color}`}
-                    />
+                    <AreaDot color={area.color} className="size-1.5" />
                     <span className="text-xs font-semibold">{area.name}</span>
                   </div>
                   <div className="space-y-1">
@@ -240,7 +235,12 @@ export function Dashboard() {
                         >
                           <div className="flex items-center gap-3">
                             <div
-                              className={`grid size-5 place-items-center rounded border-2 ${done ? `border-area-${area.color} bg-area-${area.color}` : "border-border"}`}
+                              className={cn(
+                                "grid size-5 place-items-center rounded border-2",
+                                done
+                                  ? cn(t.border, t.bg)
+                                  : "border-border",
+                              )}
                             >
                               {done && (
                                 <div className="size-1.5 rounded-full bg-background" />

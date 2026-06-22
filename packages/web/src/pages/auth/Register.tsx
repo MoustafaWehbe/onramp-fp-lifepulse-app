@@ -86,7 +86,7 @@ export function Register() {
                 id="name"
                 autoComplete="name"
                 placeholder="Elena Rivers"
-                className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-none ring-1 ring-border focus:ring-foreground"
+                className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-hidden ring-1 ring-border focus:ring-foreground"
                 {...register("name")}
               />
               {errors.name && (
@@ -108,7 +108,7 @@ export function Register() {
                 type="email"
                 autoComplete="email"
                 placeholder="you@example.com"
-                className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-none ring-1 ring-border focus:ring-foreground"
+                className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-hidden ring-1 ring-border focus:ring-foreground"
                 {...register("email")}
               />
               {errors.email && (
@@ -130,7 +130,7 @@ export function Register() {
                 type="password"
                 autoComplete="new-password"
                 placeholder="••••••••"
-                className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-none ring-1 ring-border focus:ring-foreground"
+                className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-hidden ring-1 ring-border focus:ring-foreground"
                 {...register("password")}
               />
               {errors.password && (

@@ -1,10 +1,49 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-area-health: var(--area-health);
+  --color-area-career: var(--area-career);
+  --color-area-spirit: var(--area-spirit);
+  --color-area-social: var(--area-social);
+  --color-area-learning: var(--area-learning);
+  --color-area-creative: var(--area-creative);
+
+  --grid-template-columns-14: repeat(14, minmax(0, 1fr));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
 :root {
   --radius: 0.875rem;
 
-  --background: oklch(0.97 0.01 95); /* #f7f6f3 */
-  --foreground: oklch(34.117% 0.05684 156.71); /* deep green-tinted dark, not pure black */
+  --background: oklch(0.97 0.01 95);
+  --foreground: oklch(34.117% 0.05684 156.71);
 
   --surface: oklch(0.98 0.005 95);
   --surface-elevated: oklch(1 0 0);
@@ -15,18 +54,15 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(28.992% 0.02999 159.536);
 
-  /* Brand — lifted from 0.38 → 0.46 so buttons/icons breathe */
-  --primary: oklch(0.46 0.08 170); /* teal-green, grounded not dark */
+  --primary: oklch(0.46 0.08 170);
   --primary-foreground: oklch(0.99 0 0);
 
   --primary-hover: oklch(0.52 0.08 170);
   --primary-active: oklch(0.40 0.08 170);
 
-  /* Success — lighter, friendlier green */
   --success: oklch(0.68 0.11 150);
   --success-foreground: oklch(0.99 0 0);
 
-  /* Secondary / muted / accent — very light sage */
   --secondary: oklch(0.93 0.02 155);
   --secondary-foreground: oklch(28.992% 0.02999 159.536);
 
@@ -44,14 +80,12 @@
 
   --ring: oklch(0.46 0.08 170);
 
-  /* Life Areas — each hue clearly distinct, all lifted to 0.72–0.78 lightness
-     so they read as fresh accent colours, not heavy category blocks */
-  --area-health:   oklch(0.72 0.14 155); /* fresh teal-green */
-  --area-career:   oklch(0.72 0.13 245); /* clear blue */
-  --area-spirit:   oklch(0.72 0.14 290); /* soft violet */
-  --area-social:   oklch(0.76 0.14 60);  /* warm amber */
-  --area-learning: oklch(0.74 0.13 35);  /* terracotta-orange */
-  --area-creative: oklch(0.74 0.14 335); /* dusty rose */
+  --area-health: oklch(0.72 0.14 155);
+  --area-career: oklch(0.72 0.13 245);
+  --area-spirit: oklch(0.72 0.14 290);
+  --area-social: oklch(0.76 0.14 60);
+  --area-learning: oklch(0.74 0.13 35);
+  --area-creative: oklch(0.74 0.14 335);
 }
 
 .dark {
@@ -90,13 +124,35 @@
 
   --ring: oklch(0.65 0.08 170);
 
-  /* Life areas in dark mode — slightly deeper so they don't blow out on dark cards */
-  --area-health:   oklch(0.64 0.14 155);
-  --area-career:   oklch(0.64 0.13 245);
-  --area-spirit:   oklch(0.64 0.14 290);
-  --area-social:   oklch(0.68 0.14 60);
+  --area-health: oklch(0.64 0.14 155);
+  --area-career: oklch(0.64 0.13 245);
+  --area-spirit: oklch(0.64 0.14 290);
+  --area-social: oklch(0.68 0.14 60);
   --area-learning: oklch(0.66 0.13 35);
   --area-creative: oklch(0.66 0.14 335);
+}
+
+@utility mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-feature-settings: "ss01", "cv11";
+}
+
+@utility skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -3rem;
+  z-index: 100;
+  border-radius: 0.5rem;
+  background: var(--foreground);
+  color: var(--background);
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: top 0.15s ease;
+
+  &:focus {
+    top: 1rem;
+  }
 }
 
 @layer base {
@@ -108,7 +164,7 @@
   body {
     background: var(--background);
     color: var(--foreground);
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -126,30 +182,5 @@
       animation-duration: 0.001ms !important;
       transition-duration: 0.001ms !important;
     }
-  }
-}
-
-@layer utilities {
-  .mono {
-    font-family: "JetBrains Mono", ui-monospace, monospace;
-    font-feature-settings: "ss01", "cv11";
-  }
-
-  .skip-link {
-    position: absolute;
-    left: 1rem;
-    top: -3rem;
-    z-index: 100;
-    border-radius: 0.5rem;
-    background: var(--foreground);
-    color: var(--background);
-    padding: 0.5rem 0.875rem;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    transition: top 0.15s ease;
-  }
-
-  .skip-link:focus {
-    top: 1rem;
   }
 }
