@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent, type ReactNode } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { useApp } from "@/lib/store";
+import { areaTokens } from "@/lib/area-colors";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -284,7 +285,7 @@ export function ProfilePage() {
           <Card className="bg-foreground p-6 text-background">
             <div className="mb-4 flex items-center gap-2">
               <Sparkles
-                className="size-4 text-area-spirit"
+                className={`size-4 ${areaTokens.spirit.text}`}
                 aria-hidden="true"
               />
               <span className="mono text-[10px] uppercase tracking-widest text-background/60">
