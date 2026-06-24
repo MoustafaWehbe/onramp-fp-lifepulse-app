@@ -1,8 +1,11 @@
 import { useMemo, useState } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
-import { useApp, AREA_COLOR_MAP } from "@/lib/store";
+import { AreaPct } from "@/components/area/area-badge";
+import { cn } from "@/lib/utils";
+import { AreaDot } from "@/components/area/area-dot";
+import { useApp } from "@/lib/store";
+import { areaMix, areaTokens } from "@/lib/area-colors";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   LineChart,
   Line,
@@ -127,7 +130,7 @@ export function ProgressPage() {
           <div className="flex flex-wrap gap-3">
             {areas.map((a) => (
               <div key={a.id} className="flex items-center gap-1.5">
-                <span className={`size-2 rounded-full bg-area-${a.color}`} />
+                <AreaDot color={a.color} className="size-2" />
                 <span className="text-xs text-muted-foreground">{a.name}</span>
               </div>
             ))}
@@ -173,7 +176,7 @@ export function ProgressPage() {
                   key={a.id}
                   type="monotone"
                   dataKey={a.name}
-                  stroke={AREA_COLOR_MAP[a.color].raw}
+                  stroke={areaTokens[a.color].cssVar}
                   strokeWidth={2}
                   dot={false}
                 />
@@ -202,16 +205,17 @@ export function ProgressPage() {
               <Card key={a.id} className="p-5">
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
+                    <AreaDot color={a.color} className="size-2" />
                     <span
-                      className={`size-2 rounded-full bg-area-${a.color}`}
-                    />
-                    <span className="text-sm font-semibold">{a.name}</span>
+                      className={cn(
+                        "text-sm font-semibold",
+                        areaTokens[a.color].text,
+                      )}
+                    >
+                      {a.name}
+                    </span>
                   </div>
-                  <Badge
-                    className={`mono border-0 text-[10px] bg-area-${a.color}/10 text-area-${a.color}`}
-                  >
-                    {pct}%
-                  </Badge>
+                  <AreaPct value={pct} color={a.color} className="text-[10px]" />
                 </div>
                 <div className="mb-4 grid grid-cols-7 gap-1 md:grid-cols-14">
                   {days.map((d) => {
@@ -238,7 +242,7 @@ export function ProgressPage() {
                           background:
                             intensity === 0
                               ? "var(--muted)"
-                              : `color-mix(in oklch, ${AREA_COLOR_MAP[a.color].raw} ${15 + intensity * 85}%, transparent)`,
+                              : areaMix(a.color, 15 + intensity * 85),
                         }}
                       />
                     );

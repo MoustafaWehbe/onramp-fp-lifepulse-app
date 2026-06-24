@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 interface ProgressProps extends HTMLAttributes<HTMLDivElement> {
   value?: number;
-  /** Class applied to the colored fill bar — use for dynamic area colors, e.g. `bg-area-health` */
+  /** Class applied to the colored fill bar — prefer AreaProgress for life-area colors */
   indicatorClassName?: string;
 }
 
@@ -22,7 +22,10 @@ const Progress = forwardRef<HTMLDivElement, ProgressProps>(
       {...props}
     >
       <div
-        className={cn("h-full bg-primary transition-all", indicatorClassName)}
+        className={cn(
+          "h-full bg-foreground transition-all",
+          indicatorClassName,
+        )}
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
       />
     </div>
