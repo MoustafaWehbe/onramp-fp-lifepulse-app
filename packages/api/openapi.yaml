@@ -1,0 +1,264 @@
+openapi: 3.1.0
+
+info:
+  title: Starter Kit API
+  version: 1.0.0
+  description: REST API for the Starter Kit application
+
+servers:
+  - url: /api
+    description: Default server
+
+tags:
+  - name: Auth
+    description: Authentication and session management
+
+# ─── Reusable components ───────────────────────────────────────────────────────
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: accessToken
+      description: HttpOnly access token cookie set on login
+
+  schemas:
+    RegisterBody:
+      type: object
+      required: [email, password, name]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          minLength: 8
+          description: Must contain at least one uppercase letter and one number
+          example: Password1
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: Jane Doe
+
+    LoginBody:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          minLength: 1
+          example: Password1
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        name:
+          type: string
+          example: Jane Doe
+        role:
+          type: string
+          enum: [user, admin]
+          example: user
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00.000Z"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Invalid credentials
+
+    MessageResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Success
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Validation failed
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: email
+              message:
+                type: string
+                example: Invalid email address
+
+# ─── Paths ─────────────────────────────────────────────────────────────────────
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/User"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and receive auth cookies
+      operationId: login
+      description: >
+        On success, sets two HttpOnly cookies: `accessToken` (15 min) and
+        `refreshToken` (7 days). Include `credentials: "include"` in fetch calls.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: accessToken=...; HttpOnly; Path=/api
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: "#/components/schemas/User"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh the access token
+      operationId: refreshToken
+      description: Reads the `refreshToken` cookie and issues new auth cookies.
+      responses:
+        "200":
+          description: Tokens refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Missing or invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout and clear auth cookies
+      operationId: logout
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get the current authenticated user
+      operationId: getMe
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
