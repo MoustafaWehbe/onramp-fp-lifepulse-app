@@ -4,7 +4,6 @@
     "rootDir": "./",
     "outDir": "./dist",
     "baseUrl": ".",
-    "ignoreDeprecations": "6.0",
     "paths": {
       "@starter-kit/shared": ["../shared/src"],
       "@starter-kit/shared/*": ["../shared/src/*"]
