@@ -1,9 +1,14 @@
 openapi: 3.1.0
 
 info:
-  title: Starter Kit API
+  title: KULTIVAR API
   version: 1.0.0
-  description: REST API for the Starter Kit application
+  description: |
+    REST API for the KULTIVAR habit tracker.
+
+    **Auth:** HttpOnly cookies (`accessToken`, `refreshToken`). Use `credentials: "include"` on all requests.
+
+    **Status:** Auth endpoints are implemented. Profile, Life Areas, Habits, and Check-ins are documented for team review — not yet implemented on the server.
 
 servers:
   - url: /api
@@ -12,8 +17,15 @@ servers:
 tags:
   - name: Auth
     description: Authentication and session management
+  - name: Profile
+    description: User profile and onboarding
+  - name: Life Areas
+    description: Life area categories that group habits
+  - name: Habits
+    description: Habits within life areas
+  - name: Check-ins
+    description: Daily habit completion records
 
-# ─── Reusable components ───────────────────────────────────────────────────────
 components:
   securitySchemes:
     cookieAuth:
@@ -61,26 +73,296 @@ components:
         id:
           type: string
           format: uuid
-          example: 123e4567-e89b-12d3-a456-426614174000
         email:
           type: string
           format: email
-          example: user@example.com
         name:
           type: string
-          example: Jane Doe
         role:
           type: string
           enum: [user, admin]
-          example: user
+        emailVerified:
+          type: boolean
         createdAt:
           type: string
           format: date-time
-          example: "2024-01-01T00:00:00.000Z"
         updatedAt:
           type: string
           format: date-time
-          example: "2024-01-01T00:00:00.000Z"
+
+    Profile:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+          readOnly: true
+        age:
+          type: integer
+          minimum: 1
+          maximum: 120
+          nullable: true
+        jobTitle:
+          type: string
+          maxLength: 100
+          nullable: true
+        goals:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 200
+        stressLevel:
+          type: integer
+          minimum: 1
+          maximum: 10
+          nullable: true
+        sleepHours:
+          type: number
+          minimum: 0
+          maximum: 24
+          nullable: true
+        onboarded:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+
+    UpdateProfileBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        age:
+          type: integer
+          minimum: 1
+          maximum: 120
+        jobTitle:
+          type: string
+          maxLength: 100
+        goals:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 200
+        stressLevel:
+          type: integer
+          minimum: 1
+          maximum: 10
+        sleepHours:
+          type: number
+          minimum: 0
+          maximum: 24
+
+    OnboardingBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        age:
+          type: integer
+          minimum: 1
+          maximum: 120
+        jobTitle:
+          type: string
+          maxLength: 100
+        goals:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 200
+        stressLevel:
+          type: integer
+          minimum: 1
+          maximum: 10
+        sleepHours:
+          type: number
+          minimum: 0
+          maximum: 24
+
+    AreaColor:
+      type: string
+      enum: [health, career, spirit, social, learning, creative]
+
+    LifeArea:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 50
+        color:
+          $ref: "#/components/schemas/AreaColor"
+        description:
+          type: string
+          maxLength: 300
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    HabitSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        frequency:
+          $ref: "#/components/schemas/Frequency"
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    LifeAreaWithHabits:
+      allOf:
+        - $ref: "#/components/schemas/LifeArea"
+        - type: object
+          properties:
+            habits:
+              type: array
+              items:
+                $ref: "#/components/schemas/HabitSummary"
+
+    CreateLifeAreaBody:
+      type: object
+      required: [name, color]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        color:
+          $ref: "#/components/schemas/AreaColor"
+        description:
+          type: string
+          maxLength: 300
+
+    UpdateLifeAreaBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        color:
+          $ref: "#/components/schemas/AreaColor"
+        description:
+          type: string
+          maxLength: 300
+          nullable: true
+
+    Frequency:
+      type: string
+      enum: [daily, weekdays, 3x, 5x, weekly]
+
+    Habit:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        areaId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 100
+        frequency:
+          $ref: "#/components/schemas/Frequency"
+        notes:
+          type: string
+          maxLength: 500
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateHabitBody:
+      type: object
+      required: [areaId, name, frequency]
+      properties:
+        areaId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        frequency:
+          $ref: "#/components/schemas/Frequency"
+        notes:
+          type: string
+          maxLength: 500
+
+    UpdateHabitBody:
+      type: object
+      properties:
+        areaId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        frequency:
+          $ref: "#/components/schemas/Frequency"
+        notes:
+          type: string
+          maxLength: 500
+          nullable: true
+
+    CheckIn:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        habitId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+          example: "2024-06-26"
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateCheckInBody:
+      type: object
+      required: [habitId, date]
+      properties:
+        habitId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+          description: Cannot be a future date
 
     ErrorResponse:
       type: object
@@ -105,7 +387,7 @@ components:
         error:
           type: string
           example: Validation failed
-        details:
+        errors:
           type: array
           items:
             type: object
@@ -117,13 +399,13 @@ components:
                 type: string
                 example: Invalid email address
 
-# ─── Paths ─────────────────────────────────────────────────────────────────────
 paths:
   /auth/register:
     post:
       tags: [Auth]
       summary: Register a new user
       operationId: register
+      description: Does not set auth cookies. Call POST /auth/login after registering.
       requestBody:
         required: true
         content:
@@ -159,8 +441,8 @@ paths:
       summary: Login and receive auth cookies
       operationId: login
       description: >
-        On success, sets two HttpOnly cookies: `accessToken` (15 min) and
-        `refreshToken` (7 days). Include `credentials: "include"` in fetch calls.
+        On success, sets HttpOnly cookies: accessToken (15 min) and refreshToken (7 days).
+        Include credentials on all requests.
       requestBody:
         required: true
         content:
@@ -170,11 +452,6 @@ paths:
       responses:
         "200":
           description: Login successful
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: accessToken=...; HttpOnly; Path=/api
           content:
             application/json:
               schema:
@@ -203,7 +480,7 @@ paths:
       tags: [Auth]
       summary: Refresh the access token
       operationId: refreshToken
-      description: Reads the `refreshToken` cookie and issues new auth cookies.
+      description: Reads the refreshToken cookie and issues new auth cookies.
       responses:
         "200":
           description: Tokens refreshed
@@ -217,6 +494,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Missing refresh token
 
   /auth/logout:
     post:
@@ -258,6 +537,681 @@ paths:
                     $ref: "#/components/schemas/User"
         "401":
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /profile:
+    get:
+      tags: [Profile]
+      summary: Get user profile
+      operationId: getProfile
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Profile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      tags: [Profile]
+      summary: Update user profile
+      operationId: updateProfile
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileBody"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Profile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+  /profile/onboarding:
+    patch:
+      tags: [Profile]
+      summary: Complete onboarding
+      operationId: completeOnboarding
+      description: Saves onboarding data and sets onboarded to true.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OnboardingBody"
+      responses:
+        "200":
+          description: Onboarding complete
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /areas:
+    get:
+      tags: [Life Areas]
+      summary: List life areas
+      operationId: listAreas
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: List of life areas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LifeArea"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      tags: [Life Areas]
+      summary: Create a life area
+      operationId: createArea
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLifeAreaBody"
+      responses:
+        "201":
+          description: Life area created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/LifeArea"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+  /areas/{id}:
+    get:
+      tags: [Life Areas]
+      summary: Get a life area with its habits
+      operationId: getArea
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Life area with habits
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/LifeAreaWithHabits"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Area not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      tags: [Life Areas]
+      summary: Update a life area
+      operationId: updateArea
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLifeAreaBody"
+      responses:
+        "200":
+          description: Updated life area
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/LifeArea"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Area not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+    delete:
+      tags: [Life Areas]
+      summary: Delete a life area
+      operationId: deleteArea
+      description: Cascade-deletes all habits and check-ins in this area.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Area not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /habits:
+    get:
+      tags: [Habits]
+      summary: List habits
+      operationId: listHabits
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: areaId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter by life area
+      responses:
+        "200":
+          description: List of habits
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Habit"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      tags: [Habits]
+      summary: Create a habit
+      operationId: createHabit
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateHabitBody"
+      responses:
+        "201":
+          description: Habit created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Habit"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Area not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+  /habits/{id}:
+    get:
+      tags: [Habits]
+      summary: Get a habit
+      operationId: getHabit
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Habit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Habit"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Habit not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      tags: [Habits]
+      summary: Update a habit
+      operationId: updateHabit
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateHabitBody"
+      responses:
+        "200":
+          description: Updated habit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Habit"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Habit not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+    delete:
+      tags: [Habits]
+      summary: Delete a habit
+      operationId: deleteHabit
+      description: Cascade-deletes all check-ins for this habit.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Habit not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /check-ins:
+    get:
+      tags: [Check-ins]
+      summary: List check-ins
+      operationId: listCheckIns
+      description: Returns last 30 days if no date range is provided.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date (inclusive)
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date (inclusive)
+        - name: habitId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter by habit
+      responses:
+        "200":
+          description: List of check-ins
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CheckIn"
+        "400":
+          description: Invalid date range
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      tags: [Check-ins]
+      summary: Create a check-in
+      operationId: createCheckIn
+      description: Idempotent — returns 200 if check-in already exists for habitId + date.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCheckInBody"
+      responses:
+        "200":
+          description: Check-in already existed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CheckIn"
+        "201":
+          description: Check-in created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CheckIn"
+        "400":
+          description: Future date not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Habit not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+  /check-ins/today:
+    get:
+      tags: [Check-ins]
+      summary: Get today's check-ins
+      operationId: getTodayCheckIns
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Today's check-ins
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CheckIn"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /check-ins/{id}:
+    delete:
+      tags: [Check-ins]
+      summary: Delete a check-in
+      operationId: deleteCheckIn
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Check-in not found
           content:
             application/json:
               schema:
