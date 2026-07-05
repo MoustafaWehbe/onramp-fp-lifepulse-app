@@ -1,3 +1,13 @@
-export { User } from "./User";
-export { Session } from "./Session";
-export { RefreshToken } from "./RefreshToken";
+export {
+  User,
+  Session,
+  RefreshToken,
+  UserProfile,
+  Goal,
+  UserGoal,
+  LifeArea,
+  Habit,
+  HabitCompletion,
+  AiSuggestion,
+  Embedding,
+} from "@starter-kit/shared";
