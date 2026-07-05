@@ -58,9 +58,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         aria-label="Primary navigation"
       >
         <Link
-          to="/"
+          to="/dashboard"
           className="mb-10 flex items-center gap-2 px-2"
-          aria-label="Kultivar home"
+          aria-label="Kultivar dashboard"
         >
           <div
             className="grid size-7 place-items-center rounded-md bg-foreground text-background"
@@ -161,7 +161,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-background px-4 py-3 lg:hidden">
-        <Link to="/" className="flex items-center gap-2" aria-label="Kultivar home">
+        <Link to="/dashboard" className="flex items-center gap-2" aria-label="Kultivar dashboard">
           <div
             className="grid size-6 place-items-center rounded-md bg-foreground text-background"
             aria-hidden="true"
