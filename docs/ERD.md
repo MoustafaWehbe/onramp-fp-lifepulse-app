@@ -18,7 +18,7 @@ layer.
   [`packages/api/src/migrations/20240101000000-create-auth-tables.js`](../packages/api/src/migrations/20240101000000-create-auth-tables.js).
   Login already works end-to-end.
 - **To build** (everything that hangs off `users`): `user_profiles`, `goals`,
-  `user_goals`, `life_areas`, `habits`, `habit_checkins`, `ai_suggestions`,
+  `user_goals`, `life_areas`, `habits`, `habit_completions`, `ai_suggestions`,
   `embeddings`.
 
 The only change touching the existing tables is new foreign keys pointing at
@@ -37,7 +37,7 @@ erDiagram
     users ||--o{ life_areas : owns
     life_areas ||--o{ habits : groups
     users ||--o{ habits : owns
-    habits ||--o{ habit_checkins : logged_as
+    habits ||--o{ habit_completions : logged_as
     users ||--o{ ai_suggestions : receives
     life_areas ||--o{ ai_suggestions : targets
     ai_suggestions |o--o| habits : accepted_into
@@ -55,8 +55,22 @@ erDiagram
     user_profiles {
         uuid id PK
         uuid user_id FK,UK
-        int age
-        string job_title
+        enum age_range "18-24|25-34|35-44|45-54|55+"
+        string profession
+        string industry
+        enum education_level "high_school|associate|bachelor|master|doctorate|other"
+        enum living_situation "apartment|house|dormitory|other"
+        jsonb lifestyle_types "array"
+        jsonb stress_sources "array"
+        int daily_free_time "minutes"
+        enum energy_pattern "morning|afternoon|evening"
+        enum stress_baseline "low|medium|high"
+        enum workload_intensity "low|medium|high"
+        enum motivation_driver "achievement|health|family|financial_freedom|other"
+        string failure_response
+        jsonb top_values "array"
+        jsonb identity_statements "array, optional"
+        jsonb bad_habits "array"
         smallint stress_level "1-10"
         numeric sleep_hours
         boolean onboarded
@@ -90,16 +104,19 @@ erDiagram
         uuid area_id FK
         string name
         enum frequency "daily|weekdays|3x|5x|weekly"
+        int duration_minutes
+        enum difficulty "easy|medium|hard"
         string notes
         timestamp archived_at
         timestamp created_at
         timestamp updated_at
     }
-    habit_checkins {
+    habit_completions {
         uuid id PK
         uuid habit_id FK
         uuid user_id FK
-        date checkin_date
+        date completion_date
+        boolean completed
         timestamp created_at
     }
     ai_suggestions {
@@ -109,6 +126,8 @@ erDiagram
         string suggested_name
         string rationale
         enum frequency "daily|weekdays|3x|5x|weekly"
+        int duration_minutes
+        enum difficulty "easy|medium|hard"
         enum status "pending|accepted|dismissed"
         uuid accepted_habit_id FK
         string model
@@ -158,19 +177,52 @@ erDiagram
 
 | Table | Purpose | Key constraints |
 |-------|---------|-----------------|
-| `user_profiles` | 1:1 extension of `users` with onboarding/wellbeing data (age, job title, stress 1-10, sleep hours, onboarded flag) | `user_id` FK **unique** (enforces 1:1); `ON DELETE CASCADE` |
+| `user_profiles` | 1:1 extension of `users` with rich onboarding / AI context (demographics, lifestyle, stress, motivation, values, identity statements, bad habits) plus wellbeing data (stress 1-10, sleep hours, onboarded flag). Collected during onboarding; editable from Profile after onboarding. | `user_id` FK **unique** (enforces 1:1); `ON DELETE CASCADE`; array fields stored as `jsonb` |
 | `goals` | Catalog of selectable goals (e.g. "Focus & Clarity", "Better Sleep") | `slug` unique; seeded reference data, shared across users |
 | `user_goals` | M:N join — which goals a user picked | unique `(user_id, goal_id)`; both FKs `ON DELETE CASCADE` |
 | `life_areas` | A user's life domains (Health, Career, Mind, …) | `user_id` FK `ON DELETE CASCADE`; `color` matches frontend area tokens; `sort_order` for display |
-| `habits` | Habits grouped under a life area | FKs `user_id` + `area_id` (→ `life_areas`) `ON DELETE CASCADE`; `frequency` enum `daily\|weekdays\|3x\|5x\|weekly`; `archived_at` for soft delete |
-| `habit_checkins` | One row per completed habit per day | unique `(habit_id, checkin_date)` (one check per day); FKs `ON DELETE CASCADE`; `user_id` denormalized for fast per-user queries |
+| `habits` | Habits grouped under a life area | FKs `user_id` + `area_id` (→ `life_areas`) `ON DELETE CASCADE`; `frequency` enum `daily\|weekdays\|3x\|5x\|weekly`; `duration_minutes` estimated time per session; `difficulty` enum `easy\|medium\|hard`; `archived_at` for soft delete. Completion is **not** stored on this table — see `habit_completions`. |
+| `habit_completions` | Daily habit log — one row per habit per date (completed or missed) | unique `(habit_id, completion_date)`; FKs `ON DELETE CASCADE`; `user_id` denormalized for fast per-user queries; `completed` boolean enables streaks, historical insights, and AI consistency analysis |
 
 ### To build — AI layer
 
 | Table | Purpose | Key constraints |
 |-------|---------|-----------------|
-| `ai_suggestions` | AI-generated habit suggestions per area (3-5 per area) with accept/dismiss workflow | FKs `user_id` + `area_id`; `status` enum `pending\|accepted\|dismissed`; `accepted_habit_id` FK → `habits` (nullable, set when accepted); `model` records which model produced it |
+| `ai_suggestions` | AI-generated habit suggestions per area (3-5 per area) with accept/dismiss workflow | FKs `user_id` + `area_id`; `duration_minutes` + `difficulty` carried into `habits` on accept; `status` enum `pending\|accepted\|dismissed`; `accepted_habit_id` FK → `habits` (nullable, set when accepted); `model` records which model produced it |
 | `embeddings` | Vector store for semantic search / habit de-duplication | requires the `pgvector` extension; `embedding vector(1536)` (matches `text-embedding-3-small`); index on `(entity_type, entity_id)`; backs the `embeddings` BullMQ queue |
+
+### `user_profiles` — AI context fields
+
+Collected during onboarding and editable from the Profile page. Richer profiles
+improve AI habit recommendations.
+
+| Field | Type | Examples / notes |
+|-------|------|------------------|
+| `stress_sources` | `jsonb` array | work deadlines, financial pressure, family responsibilities |
+| `living_situation` | enum | apartment, house, dormitory |
+| `lifestyle_types` | `jsonb` array | working professional, student, parent, entrepreneur |
+| `profession` | string | e.g. Software Engineer |
+| `industry` | string | e.g. Technology, Healthcare |
+| `education_level` | enum | high school, associate, bachelor, master, doctorate |
+| `daily_free_time` | int (minutes) | available time for habits per day |
+| `age_range` | enum | 18-24, 25-34, 35-44, 45-54, 55+ |
+| `energy_pattern` | enum | morning, afternoon, evening |
+| `stress_baseline` | enum | low, medium, high |
+| `workload_intensity` | enum | low, medium, high |
+| `motivation_driver` | enum | achievement, health, family, financial freedom |
+| `failure_response` | string | how the user reacts after missing goals or habits |
+| `top_values` | `jsonb` array | Growth, Health, Discipline, Family |
+| `identity_statements` | `jsonb` array (optional) | "I want to become a healthier person." |
+| `bad_habits` | `jsonb` array | too much screen time, procrastination, unhealthy eating |
+
+**UI rule:** when the sum of active habits' `duration_minutes` exceeds the
+user's `daily_free_time`, show a schedule warning (does not block saving).
+
+### `habit_completions` vs `habits`
+
+Completion state lives only in `habit_completions`, not on `habits`. This
+supports daily progress, streaks, historical insights, and AI analysis of
+consistency for adapting future recommendations.
 
 ## Conventions
 
