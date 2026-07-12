@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
 
   const displayName = user?.name ?? profile.name;
-  const displayJob = profile.jobTitle;
+  const displayJob = profile.profession;
 
   if (!hydrated) {
     return (

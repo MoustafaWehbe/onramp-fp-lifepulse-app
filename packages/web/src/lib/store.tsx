@@ -32,12 +32,44 @@ export interface CheckIn {
   date: string;
   habitId: string;
 }
-
+export type AgeRange = "18-24" | "25-34" | "35-44" | "45-54" | "55+";
+export type EducationLevel =
+  | "high_school"
+  | "associate"
+  | "bachelor"
+  | "master"
+  | "doctorate"
+  | "other";
+export type LivingSituation = "apartment" | "house" | "dormitory" | "other";
+export type EnergyPattern = "morning" | "afternoon" | "evening";
+export type StressBaseline = "low" | "medium" | "high";
+export type WorkloadIntensity = "low" | "medium" | "high";
+export type MotivationDriver =
+  | "achievement"
+  | "health"
+  | "family"
+  | "financial_freedom"
+  | "other";
+  
 export interface Profile {
   name: string;
   email: string;
-  age?: number;
-  jobTitle?: string;
+  ageRange?: AgeRange;
+  profession?: string;
+  industry?: string;
+  educationLevel?: EducationLevel;
+  livingSituation?: LivingSituation;
+  lifestyleTypes?: string[];
+  stressSources?: string[];
+  dailyFreeTime?: number; // minutes/day
+  energyPattern?: EnergyPattern;
+  stressBaseline?: StressBaseline;
+  workloadIntensity?: WorkloadIntensity;
+  motivationDriver?: MotivationDriver;
+  failureResponse?: string;
+  topValues?: string[];
+  identityStatements?: string[];
+  badHabits?: string[];
   goals: string[];
   stressLevel?: number;
   sleepHours?: number;
@@ -173,8 +205,7 @@ const seedData = (): Pick<
       ...defaultProfile,
       name: "Elena Rivers",
       email: "elena@example.com",
-      age: 31,
-      jobTitle: "Senior Designer",
+      // age: 31,
       goals: ["Focus", "Health", "Learning"],
       stressLevel: 6,
       sleepHours: 6.5,
