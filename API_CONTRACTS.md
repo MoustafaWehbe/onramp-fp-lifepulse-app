@@ -9,7 +9,7 @@
 |-------|-----------|-------------|
 | Auth | 5 | Yes |
 | Profile | 3 | No |
-| Life Areas | 5 | No |
+| Life Areas | 5 | Yes |
 | Habits | 5 | No |
 | Check-ins | 4 | No |
 | Health | 1 (`GET /health`) | Yes |
