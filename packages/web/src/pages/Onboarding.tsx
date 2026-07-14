@@ -1,10 +1,20 @@
 import { useNavigate } from "react-router-dom";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
-import { useApp } from "@/lib/store";
+import {
+  useApp,
+  type AgeRange,
+  type EducationLevel,
+  type LivingSituation,
+  type EnergyPattern,
+  type StressBaseline,
+  type WorkloadIntensity,
+  type MotivationDriver,
+} from "@/lib/store";
 import { AREA_PRESETS, areaTokens } from "@/lib/area-colors";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { PillSelect, TagInput } from "@/components/profile-fields";
 import { toast } from "sonner";
 
 const GOALS = [
@@ -18,17 +28,91 @@ const GOALS = [
   "Learning",
 ];
 
+const AGE_RANGE_OPTIONS: { value: AgeRange; label: string }[] = [
+  { value: "18-24", label: "18–24" },
+  { value: "25-34", label: "25–34" },
+  { value: "35-44", label: "35–44" },
+  { value: "45-54", label: "45–54" },
+  { value: "55+", label: "55+" },
+];
+const EDUCATION_OPTIONS: { value: EducationLevel; label: string }[] = [
+  { value: "high_school", label: "High school" },
+  { value: "associate", label: "Associate degree" },
+  { value: "bachelor", label: "Bachelor's" },
+  { value: "master", label: "Master's" },
+  { value: "doctorate", label: "Doctorate" },
+  { value: "other", label: "Other" },
+];
+const LIVING_OPTIONS: { value: LivingSituation; label: string }[] = [
+  { value: "apartment", label: "Apartment" },
+  { value: "house", label: "House" },
+  { value: "dormitory", label: "Dormitory" },
+  { value: "other", label: "Other" },
+];
+const ENERGY_OPTIONS: { value: EnergyPattern; label: string }[] = [
+  { value: "morning", label: "Morning person" },
+  { value: "afternoon", label: "Afternoon peak" },
+  { value: "evening", label: "Night owl" },
+];
+const STRESS_BASELINE_OPTIONS: { value: StressBaseline; label: string }[] = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+];
+const WORKLOAD_OPTIONS: { value: WorkloadIntensity; label: string }[] = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+];
+const MOTIVATION_OPTIONS: { value: MotivationDriver; label: string }[] = [
+  { value: "achievement", label: "Achievement" },
+  { value: "health", label: "Health" },
+  { value: "family", label: "Family" },
+  { value: "financial_freedom", label: "Financial freedom" },
+  { value: "other", label: "Other" },
+];
+
 export function Onboarding() {
   const navigate = useNavigate();
   const { setProfile, addArea } = useApp();
   const { user } = useAuth();
   const [step, setStep] = useState(0);
+
+  // Step 0 — You
   const [name, setName] = useState(user?.name ?? "");
-  const [age, setAge] = useState<number | "">("");
-  const [job, setJob] = useState("");
+  // const [age, setAge] = useState<number | "">("");
+  // const [job, setJob] = useState("");
+
+  // Step 1 — Background
+  const [ageRange, setAgeRange] = useState<AgeRange | undefined>();
+  const [profession, setProfession] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [educationLevel, setEducationLevel] = useState<EducationLevel | undefined>();
+  const [livingSituation, setLivingSituation] = useState<LivingSituation | undefined>();
+
+  // Step 2 — Goals
   const [goals, setGoals] = useState<string[]>([]);
+
+  // Step 3 — Lifestyle
+  const [lifestyleTypes, setLifestyleTypes] = useState<string[]>([]);
+  const [dailyFreeTime, setDailyFreeTime] = useState<number | "">("");
+  const [energyPattern, setEnergyPattern] = useState<EnergyPattern | undefined>();
+  const [workloadIntensity, setWorkloadIntensity] = useState<WorkloadIntensity | undefined>();
+
+  // Step 4 — Wellbeing
   const [stress, setStress] = useState(5);
   const [sleep, setSleep] = useState(7);
+  const [stressBaseline, setStressBaseline] = useState<StressBaseline | undefined>();
+  const [stressSources, setStressSources] = useState<string[]>([]);
+
+  // Step 5 — Motivation & identity
+  const [motivationDriver, setMotivationDriver] = useState<MotivationDriver | undefined>();
+  const [failureResponse, setFailureResponse] = useState("");
+  const [topValues, setTopValues] = useState<string[]>([]);
+  const [identityStatements, setIdentityStatements] = useState<string[]>([]);
+  const [badHabits, setBadHabits] = useState<string[]>([]);
+
+  // Step 6 — Areas
   const [selectedAreas, setSelectedAreas] = useState<string[]>([
     "Health",
     "Career",
@@ -36,7 +120,15 @@ export function Onboarding() {
   ]);
   const [touched, setTouched] = useState(false);
 
-  const steps = ["You", "Goals", "Wellbeing", "Areas"];
+  const steps = [
+    "You",
+    "Background",
+    "Goals",
+    "Lifestyle",
+    "Wellbeing",
+    "Motivation",
+    "Areas",
+  ];
   const total = steps.length;
 
   const toggleGoal = (g: string) =>
@@ -52,16 +144,16 @@ export function Onboarding() {
     touched && step === 0 && name.trim().length === 0
       ? "Please enter your name."
       : "";
-  const ageError =
-    touched && step === 0 && age !== "" && (age < 13 || age > 120)
-      ? "Age must be between 13 and 120."
-      : "";
+  // const ageError =
+  //   touched && step === 0 && age !== "" && (age < 13 || age > 120)
+  //     ? "Age must be between 13 and 120."
+  //     : "";
   const goalsError =
-    touched && step === 1 && goals.length === 0
+    touched && step === 2 && goals.length === 0
       ? "Pick at least one goal."
       : "";
   const areasError =
-    touched && step === 3 && selectedAreas.length === 0
+    touched && step === 6 && selectedAreas.length === 0
       ? "Choose at least one life area."
       : "";
 
@@ -69,11 +161,26 @@ export function Onboarding() {
     setProfile({
       name: name.trim() || user?.name || "Friend",
       email: user?.email ?? "you@example.com",
-      age: typeof age === "number" ? age : undefined,
-      jobTitle: job.trim(),
-      goals,
+      // age: typeof age === "number" ? age : undefined,
+      ageRange,
+      profession: profession.trim() || undefined,
+      industry: industry.trim() || undefined,
+      educationLevel,
+      livingSituation,
+      lifestyleTypes,
+      dailyFreeTime: typeof dailyFreeTime === "number" ? dailyFreeTime : undefined,
+      energyPattern,
+      workloadIntensity,
       stressLevel: stress,
       sleepHours: sleep,
+      stressBaseline,
+      stressSources,
+      motivationDriver,
+      failureResponse: failureResponse.trim() || undefined,
+      topValues,
+      identityStatements,
+      badHabits,
+      goals,
       onboarded: true,
     });
     AREA_PRESETS.filter((a) => selectedAreas.includes(a.name)).forEach((a) =>
@@ -84,9 +191,9 @@ export function Onboarding() {
   };
 
   const canNext = () => {
-    if (step === 0) return name.trim().length > 0 && !ageError;
-    if (step === 1) return goals.length > 0;
-    if (step === 3) return selectedAreas.length > 0;
+    if (step === 0) return name.trim().length > 0;
+    if (step === 2) return goals.length > 0;
+    if (step === 6) return selectedAreas.length > 0;
     return true;
   };
 
@@ -166,7 +273,7 @@ export function Onboarding() {
                     className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-hidden ring-1 ring-border focus:ring-foreground"
                   />
                 </Field>
-                <Field label="Age" htmlFor="ob-age" error={ageError}>
+                {/* <Field label="Age" htmlFor="ob-age" error={ageError}>
                   <input
                     id="ob-age"
                     name="age"
@@ -182,8 +289,8 @@ export function Onboarding() {
                     placeholder="31"
                     className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-hidden ring-1 ring-border focus:ring-foreground"
                   />
-                </Field>
-                <Field label="Job title" htmlFor="ob-job">
+                </Field> */}
+                {/* <Field label="Job title" htmlFor="ob-job">
                   <input
                     id="ob-job"
                     name="jobTitle"
@@ -193,12 +300,68 @@ export function Onboarding() {
                     placeholder="Senior Designer"
                     className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-hidden ring-1 ring-border focus:ring-foreground"
                   />
-                </Field>
+                </Field> */}
               </div>
             </fieldset>
           )}
 
           {step === 1 && (
+            <fieldset className="max-w-lg border-0 p-0">
+              <legend className="text-3xl font-extrabold tracking-tight">
+                A bit more background.
+              </legend>
+              <p className="mt-2 text-muted-foreground">
+                Helps the AI calibrate suggestions to your life stage and
+                context. All optional.
+              </p>
+              <div className="mt-8 space-y-6">
+                <Field label="Age range" htmlFor="ob-agerange">
+                  <PillSelect
+                    ariaLabel="Age range"
+                    options={AGE_RANGE_OPTIONS}
+                    value={ageRange}
+                    onChange={setAgeRange}
+                  />
+                </Field>
+                <Field label="Profession" htmlFor="ob-profession">
+                  <input
+                    id="ob-profession"
+                    value={profession}
+                    onChange={(e) => setProfession(e.target.value)}
+                    placeholder="Product Designer"
+                    className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-hidden ring-1 ring-border focus:ring-foreground"
+                  />
+                </Field>
+                <Field label="Industry" htmlFor="ob-industry">
+                  <input
+                    id="ob-industry"
+                    value={industry}
+                    onChange={(e) => setIndustry(e.target.value)}
+                    placeholder="Software"
+                    className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-hidden ring-1 ring-border focus:ring-foreground"
+                  />
+                </Field>
+                <Field label="Education level" htmlFor="ob-education">
+                  <PillSelect
+                    ariaLabel="Education level"
+                    options={EDUCATION_OPTIONS}
+                    value={educationLevel}
+                    onChange={setEducationLevel}
+                  />
+                </Field>
+                <Field label="Living situation" htmlFor="ob-living">
+                  <PillSelect
+                    ariaLabel="Living situation"
+                    options={LIVING_OPTIONS}
+                    value={livingSituation}
+                    onChange={setLivingSituation}
+                  />
+                </Field>
+              </div>
+            </fieldset>
+          )}
+
+          {step === 2 && (
             <fieldset className="border-0 p-0">
               <legend className="text-3xl font-extrabold tracking-tight">
                 What are you working toward?
@@ -235,7 +398,59 @@ export function Onboarding() {
             </fieldset>
           )}
 
-          {step === 2 && (
+          {step === 3 && (
+            <fieldset className="max-w-lg border-0 p-0">
+              <legend className="text-3xl font-extrabold tracking-tight">
+                Your day-to-day.
+              </legend>
+              <p className="mt-2 text-muted-foreground">
+                Lifestyle shapes which habits are realistic for you.
+              </p>
+              <div className="mt-8 space-y-6">
+                <Field label="Lifestyle" htmlFor="ob-lifestyle">
+                  <TagInput
+                    ariaLabel="Lifestyle types"
+                    value={lifestyleTypes}
+                    onChange={setLifestyleTypes}
+                    placeholder="e.g. remote worker, parent, athlete"
+                  />
+                </Field>
+                <Field label="Free time per day (minutes)" htmlFor="ob-freetime">
+                  <input
+                    id="ob-freetime"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={600}
+                    value={dailyFreeTime}
+                    onChange={(e) =>
+                      setDailyFreeTime(e.target.value ? Number(e.target.value) : "")
+                    }
+                    placeholder="60"
+                    className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-hidden ring-1 ring-border focus:ring-foreground"
+                  />
+                </Field>
+                <Field label="Energy pattern" htmlFor="ob-energy">
+                  <PillSelect
+                    ariaLabel="Energy pattern"
+                    options={ENERGY_OPTIONS}
+                    value={energyPattern}
+                    onChange={setEnergyPattern}
+                  />
+                </Field>
+                <Field label="Workload intensity" htmlFor="ob-workload">
+                  <PillSelect
+                    ariaLabel="Workload intensity"
+                    options={WORKLOAD_OPTIONS}
+                    value={workloadIntensity}
+                    onChange={setWorkloadIntensity}
+                  />
+                </Field>
+              </div>
+            </fieldset>
+          )}
+
+          {step === 4 && (
             <fieldset className="max-w-lg border-0 p-0">
               <legend className="text-3xl font-extrabold tracking-tight">
                 A quick wellbeing check.
@@ -287,11 +502,83 @@ export function Onboarding() {
                     className="w-full accent-foreground"
                   />
                 </div>
+                <Field label="Baseline stress" htmlFor="ob-stressbaseline">
+                  <PillSelect
+                    ariaLabel="Stress baseline"
+                    options={STRESS_BASELINE_OPTIONS}
+                    value={stressBaseline}
+                    onChange={setStressBaseline}
+                  />
+                </Field>
+                <Field label="What stresses you most?" htmlFor="ob-stresssources">
+                  <TagInput
+                    ariaLabel="Stress sources"
+                    value={stressSources}
+                    onChange={setStressSources}
+                    placeholder="e.g. deadlines, finances, sleep"
+                  />
+                </Field>
               </div>
             </fieldset>
           )}
 
-          {step === 3 && (
+          {step === 5 && (
+            <fieldset className="max-w-lg border-0 p-0">
+              <legend className="text-3xl font-extrabold tracking-tight">
+                What drives you?
+              </legend>
+              <p className="mt-2 text-muted-foreground">
+                This helps the AI frame suggestions in language that motivates
+                you specifically.
+              </p>
+              <div className="mt-8 space-y-6">
+                <Field label="Primary motivation" htmlFor="ob-motivation">
+                  <PillSelect
+                    ariaLabel="Motivation driver"
+                    options={MOTIVATION_OPTIONS}
+                    value={motivationDriver}
+                    onChange={setMotivationDriver}
+                  />
+                </Field>
+                <Field label="When you fail at a habit, you usually..." htmlFor="ob-failure">
+                  <textarea
+                    id="ob-failure"
+                    value={failureResponse}
+                    onChange={(e) => setFailureResponse(e.target.value)}
+                    placeholder="e.g. beat myself up, shrug it off, try again the next day"
+                    rows={3}
+                    className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-hidden ring-1 ring-border focus:ring-foreground"
+                  />
+                </Field>
+                <Field label="Top values" htmlFor="ob-values">
+                  <TagInput
+                    ariaLabel="Top values"
+                    value={topValues}
+                    onChange={setTopValues}
+                    placeholder="e.g. discipline, family, growth"
+                  />
+                </Field>
+                <Field label="How you see yourself" htmlFor="ob-identity">
+                  <TagInput
+                    ariaLabel="Identity statements"
+                    value={identityStatements}
+                    onChange={setIdentityStatements}
+                    placeholder="e.g. a runner, a builder"
+                  />
+                </Field>
+                <Field label="Habits you're trying to break" htmlFor="ob-badhabits">
+                  <TagInput
+                    ariaLabel="Bad habits"
+                    value={badHabits}
+                    onChange={setBadHabits}
+                    placeholder="e.g. doomscrolling, skipping breakfast"
+                  />
+                </Field>
+              </div>
+            </fieldset>
+          )}
+
+          {step === 6 && (
             <fieldset className="border-0 p-0">
               <legend className="text-3xl font-extrabold tracking-tight">
                 Choose your life areas.

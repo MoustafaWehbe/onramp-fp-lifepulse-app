@@ -1,6 +1,15 @@
 import { useState, useEffect, type FormEvent, type ReactNode } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
-import { useApp } from "@/lib/store";
+import {
+  useApp,
+  type AgeRange,
+  type EducationLevel,
+  type LivingSituation,
+  type EnergyPattern,
+  type StressBaseline,
+  type WorkloadIntensity,
+  type MotivationDriver,
+} from "@/lib/store";
 import { areaTokens } from "@/lib/area-colors";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -9,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { PillSelect, TagInput } from "@/components/profile-fields";
 import { toast } from "sonner";
 import { RotateCcw, Sparkles } from "lucide-react";
 
@@ -23,6 +33,50 @@ const GOALS = [
   "Learning",
 ];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const AGE_RANGE_OPTIONS: { value: AgeRange; label: string }[] = [
+  { value: "18-24", label: "18–24" },
+  { value: "25-34", label: "25–34" },
+  { value: "35-44", label: "35–44" },
+  { value: "45-54", label: "45–54" },
+  { value: "55+", label: "55+" },
+];
+const EDUCATION_OPTIONS: { value: EducationLevel; label: string }[] = [
+  { value: "high_school", label: "High school" },
+  { value: "associate", label: "Associate degree" },
+  { value: "bachelor", label: "Bachelor's" },
+  { value: "master", label: "Master's" },
+  { value: "doctorate", label: "Doctorate" },
+  { value: "other", label: "Other" },
+];
+const LIVING_OPTIONS: { value: LivingSituation; label: string }[] = [
+  { value: "apartment", label: "Apartment" },
+  { value: "house", label: "House" },
+  { value: "dormitory", label: "Dormitory" },
+  { value: "other", label: "Other" },
+];
+const ENERGY_OPTIONS: { value: EnergyPattern; label: string }[] = [
+  { value: "morning", label: "Morning person" },
+  { value: "afternoon", label: "Afternoon peak" },
+  { value: "evening", label: "Night owl" },
+];
+const STRESS_BASELINE_OPTIONS: { value: StressBaseline; label: string }[] = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+];
+const WORKLOAD_OPTIONS: { value: WorkloadIntensity; label: string }[] = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+];
+const MOTIVATION_OPTIONS: { value: MotivationDriver; label: string }[] = [
+  { value: "achievement", label: "Achievement" },
+  { value: "health", label: "Health" },
+  { value: "family", label: "Family" },
+  { value: "financial_freedom", label: "Financial freedom" },
+  { value: "other", label: "Other" },
+];
 
 export function ProfilePage() {
   const { profile, setProfile, reset } = useApp();
@@ -51,20 +105,20 @@ export function ProfilePage() {
     touched && form.email && !EMAIL_RE.test(form.email)
       ? "Please enter a valid email."
       : "";
-  const ageError =
-    touched && form.age !== undefined && (form.age < 13 || form.age > 120)
-      ? "Age must be 13–120."
-      : "";
+  // const ageError =
+  //   touched && form.age !== undefined && (form.age < 13 || form.age > 120)
+  //     ? "Age must be 13–120."
+  //     : "";
 
-  const valid = !nameError && !emailError && !ageError;
+  const valid = !nameError && !emailError;
 
   const save = (e: FormEvent) => {
     e.preventDefault();
     setTouched(true);
     if (
       !form.name.trim() ||
-      (form.email && !EMAIL_RE.test(form.email)) ||
-      (form.age !== undefined && (form.age < 13 || form.age > 120))
+      (form.email && !EMAIL_RE.test(form.email)) 
+      // (form.age !== undefined && (form.age < 13 || form.age > 120))
     )
       return;
     setProfile(form);
@@ -90,7 +144,7 @@ export function ProfilePage() {
                 <div>
                   <h2 className="text-lg font-bold">{form.name || "Friend"}</h2>
                   <p className="text-sm text-muted-foreground">
-                    {form.jobTitle || "—"}
+                    {form.profession || "—"}
                   </p>
                 </div>
               </div>
@@ -123,7 +177,7 @@ export function ProfilePage() {
                     }
                   />
                 </Field>
-                <Field label="Age" htmlFor="p-age" error={ageError}>
+                {/* <Field label="Age" htmlFor="p-age" error={ageError}>
                   <Input
                     id="p-age"
                     name="age"
@@ -143,8 +197,8 @@ export function ProfilePage() {
                       })
                     }
                   />
-                </Field>
-                <Field label="Job title" htmlFor="p-job">
+                </Field> */}
+                {/* <Field label="Job title" htmlFor="p-job">
                   <Input
                     id="p-job"
                     name="jobTitle"
@@ -154,8 +208,61 @@ export function ProfilePage() {
                       setForm({ ...form, jobTitle: e.target.value })
                     }
                   />
-                </Field>
+                </Field> */}
               </div>
+
+              <Separator />
+
+              {/* Background */}
+              <fieldset className="space-y-5">
+                <legend className="mb-1.5 block text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                  Background
+                </legend>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label="Profession" htmlFor="p-profession">
+                    <Input
+                      id="p-profession"
+                      value={form.profession ?? ""}
+                      onChange={(e) =>
+                        setForm({ ...form, profession: e.target.value })
+                      }
+                    />
+                  </Field>
+                  <Field label="Industry" htmlFor="p-industry">
+                    <Input
+                      id="p-industry"
+                      value={form.industry ?? ""}
+                      onChange={(e) =>
+                        setForm({ ...form, industry: e.target.value })
+                      }
+                    />
+                  </Field>
+                </div>
+                <Field label="Age range" htmlFor="p-agerange">
+                  <PillSelect
+                    ariaLabel="Age range"
+                    options={AGE_RANGE_OPTIONS}
+                    value={form.ageRange}
+                    onChange={(v) => setForm({ ...form, ageRange: v })}
+                  />
+                </Field>
+                <Field label="Education level" htmlFor="p-education">
+                  <PillSelect
+                    ariaLabel="Education level"
+                    options={EDUCATION_OPTIONS}
+                    value={form.educationLevel}
+                    onChange={(v) => setForm({ ...form, educationLevel: v })}
+                  />
+                </Field>
+                <Field label="Living situation" htmlFor="p-living">
+                  <PillSelect
+                    ariaLabel="Living situation"
+                    options={LIVING_OPTIONS}
+                    value={form.livingSituation}
+                    onChange={(v) => setForm({ ...form, livingSituation: v })}
+                  />
+                </Field>
+              </fieldset>
 
               <Separator />
 
@@ -188,64 +295,190 @@ export function ProfilePage() {
 
               <Separator />
 
-              {/* Sliders */}
-              <div className="grid gap-6 md:grid-cols-2">
-                <div>
-                  <div className="mb-2 flex items-baseline justify-between">
-                    <Label
-                      htmlFor="p-stress"
-                      className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground"
-                    >
-                      Stress level
-                    </Label>
-                    <span className="mono text-sm" aria-live="polite">
-                      {form.stressLevel ?? 5}/10
-                    </span>
-                  </div>
-                  <input
-                    id="p-stress"
-                    type="range"
-                    min={1}
-                    max={10}
-                    value={form.stressLevel ?? 5}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        stressLevel: Number(e.target.value),
-                      })
-                    }
-                    className="w-full accent-foreground"
+              {/* Lifestyle */}
+              <fieldset className="space-y-5">
+                <legend className="mb-1.5 block text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                  Lifestyle
+                </legend>
+                <Field label="Lifestyle tags" htmlFor="p-lifestyle">
+                  <TagInput
+                    ariaLabel="Lifestyle types"
+                    value={form.lifestyleTypes ?? []}
+                    onChange={(v) => setForm({ ...form, lifestyleTypes: v })}
+                    placeholder="e.g. remote worker, parent, athlete"
                   />
+                </Field>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label="Free time/day (minutes)" htmlFor="p-freetime">
+                    <Input
+                      id="p-freetime"
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      max={600}
+                      value={form.dailyFreeTime ?? ""}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          dailyFreeTime: e.target.value
+                            ? Number(e.target.value)
+                            : undefined,
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label="Energy pattern" htmlFor="p-energy">
+                    <PillSelect
+                      ariaLabel="Energy pattern"
+                      options={ENERGY_OPTIONS}
+                      value={form.energyPattern}
+                      onChange={(v) => setForm({ ...form, energyPattern: v })}
+                    />
+                  </Field>
                 </div>
-                <div>
-                  <div className="mb-2 flex items-baseline justify-between">
-                    <Label
-                      htmlFor="p-sleep"
-                      className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground"
-                    >
-                      Sleep hours
-                    </Label>
-                    <span className="mono text-sm" aria-live="polite">
-                      {form.sleepHours ?? 7} hrs
-                    </span>
-                  </div>
-                  <input
-                    id="p-sleep"
-                    type="range"
-                    min={3}
-                    max={10}
-                    step={0.5}
-                    value={form.sleepHours ?? 7}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        sleepHours: Number(e.target.value),
-                      })
-                    }
-                    className="w-full accent-foreground"
+                <Field label="Workload intensity" htmlFor="p-workload">
+                  <PillSelect
+                    ariaLabel="Workload intensity"
+                    options={WORKLOAD_OPTIONS}
+                    value={form.workloadIntensity}
+                    onChange={(v) => setForm({ ...form, workloadIntensity: v })}
                   />
+                </Field>
+              </fieldset>
+
+              <Separator />
+
+              {/* Wellbeing */}
+              <fieldset className="space-y-6">
+                <legend className="mb-1.5 block text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                  Wellbeing
+                </legend>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <div className="mb-2 flex items-baseline justify-between">
+                      <Label
+                        htmlFor="p-stress"
+                        className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground"
+                      >
+                        Stress level
+                      </Label>
+                      <span className="mono text-sm" aria-live="polite">
+                        {form.stressLevel ?? 5}/10
+                      </span>
+                    </div>
+                    <input
+                      id="p-stress"
+                      type="range"
+                      min={1}
+                      max={10}
+                      value={form.stressLevel ?? 5}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          stressLevel: Number(e.target.value),
+                        })
+                      }
+                      className="w-full accent-foreground"
+                    />
+                  </div>
+                  <div>
+                    <div className="mb-2 flex items-baseline justify-between">
+                      <Label
+                        htmlFor="p-sleep"
+                        className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground"
+                      >
+                        Sleep hours
+                      </Label>
+                      <span className="mono text-sm" aria-live="polite">
+                        {form.sleepHours ?? 7} hrs
+                      </span>
+                    </div>
+                    <input
+                      id="p-sleep"
+                      type="range"
+                      min={3}
+                      max={10}
+                      step={0.5}
+                      value={form.sleepHours ?? 7}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          sleepHours: Number(e.target.value),
+                        })
+                      }
+                      className="w-full accent-foreground"
+                    />
+                  </div>
                 </div>
-              </div>
+                <Field label="Baseline stress" htmlFor="p-stressbaseline">
+                  <PillSelect
+                    ariaLabel="Stress baseline"
+                    options={STRESS_BASELINE_OPTIONS}
+                    value={form.stressBaseline}
+                    onChange={(v) => setForm({ ...form, stressBaseline: v })}
+                  />
+                </Field>
+                <Field label="What stresses you most?" htmlFor="p-stresssources">
+                  <TagInput
+                    ariaLabel="Stress sources"
+                    value={form.stressSources ?? []}
+                    onChange={(v) => setForm({ ...form, stressSources: v })}
+                    placeholder="e.g. deadlines, finances, sleep"
+                  />
+                </Field>
+              </fieldset>
+
+              <Separator />
+
+              {/* Motivation & identity */}
+              <fieldset className="space-y-5">
+                <legend className="mb-1.5 block text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                  Motivation &amp; identity
+                </legend>
+                <Field label="Primary motivation" htmlFor="p-motivation">
+                  <PillSelect
+                    ariaLabel="Motivation driver"
+                    options={MOTIVATION_OPTIONS}
+                    value={form.motivationDriver}
+                    onChange={(v) => setForm({ ...form, motivationDriver: v })}
+                  />
+                </Field>
+                <Field label="When you fail at a habit, you usually..." htmlFor="p-failure">
+                  <textarea
+                    id="p-failure"
+                    value={form.failureResponse ?? ""}
+                    onChange={(e) =>
+                      setForm({ ...form, failureResponse: e.target.value })
+                    }
+                    rows={3}
+                    className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-hidden ring-1 ring-border focus:ring-foreground"
+                  />
+                </Field>
+                <Field label="Top values" htmlFor="p-values">
+                  <TagInput
+                    ariaLabel="Top values"
+                    value={form.topValues ?? []}
+                    onChange={(v) => setForm({ ...form, topValues: v })}
+                    placeholder="e.g. discipline, family, growth"
+                  />
+                </Field>
+                <Field label="How you see yourself" htmlFor="p-identity">
+                  <TagInput
+                    ariaLabel="Identity statements"
+                    value={form.identityStatements ?? []}
+                    onChange={(v) => setForm({ ...form, identityStatements: v })}
+                    placeholder="e.g. a runner, a builder"
+                  />
+                </Field>
+                <Field label="Habits you're trying to break" htmlFor="p-badhabits">
+                  <TagInput
+                    ariaLabel="Bad habits"
+                    value={form.badHabits ?? []}
+                    onChange={(v) => setForm({ ...form, badHabits: v })}
+                    placeholder="e.g. doomscrolling, skipping breakfast"
+                  />
+                </Field>
+              </fieldset>
             </CardContent>
 
             <CardFooter className="justify-between border-t border-border pt-4">
