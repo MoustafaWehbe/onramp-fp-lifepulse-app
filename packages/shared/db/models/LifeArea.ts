@@ -5,7 +5,7 @@ export interface LifeAreaAttributes {
   userId: string;
   name: string;
   color: string;
-  description?: string;
+  description?: string | null;
   sortOrder: number;
   createdAt?: Date;
   updatedAt?: Date;
@@ -24,7 +24,7 @@ export class LifeArea
   declare userId: string;
   declare name: string;
   declare color: string;
-  declare description: string | undefined;
+  declare description: string | null | undefined;
   declare sortOrder: number;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
