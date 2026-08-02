@@ -14,6 +14,7 @@ import {
 import { AREA_PRESETS, areaTokens } from "@/lib/area-colors";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useCreateArea } from "@/hooks/useAreas";
 import { PillSelect, TagInput } from "@/components/profile-fields";
 import { toast } from "sonner";
 
@@ -74,8 +75,9 @@ const MOTIVATION_OPTIONS: { value: MotivationDriver; label: string }[] = [
 
 export function Onboarding() {
   const navigate = useNavigate();
-  const { setProfile, addArea } = useApp();
+  const { setProfile } = useApp();
   const { user } = useAuth();
+  const createArea = useCreateArea();
   const [step, setStep] = useState(0);
 
   // Step 0 — You
@@ -157,7 +159,7 @@ export function Onboarding() {
       ? "Choose at least one life area."
       : "";
 
-  const finish = () => {
+  const finish = async () => {
     setProfile({
       name: name.trim() || user?.name || "Friend",
       email: user?.email ?? "you@example.com",
@@ -183,10 +185,19 @@ export function Onboarding() {
       goals,
       onboarded: true,
     });
-    AREA_PRESETS.filter((a) => selectedAreas.includes(a.name)).forEach((a) =>
-      addArea({ name: a.name, color: a.color, description: "" }),
-    );
-    toast.success("Welcome to your garden");
+
+    try {
+      await Promise.all(
+        AREA_PRESETS.filter((a) => selectedAreas.includes(a.name)).map((a) =>
+          createArea.mutateAsync({ name: a.name, color: a.color }),
+        ),
+      );
+      toast.success("Welcome to your garden");
+    } catch {
+      toast.error(
+        "Welcome! Some areas couldn't be created — add them from the dashboard.",
+      );
+    }
     navigate("/dashboard");
   };
 
