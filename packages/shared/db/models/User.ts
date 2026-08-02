@@ -1,5 +1,10 @@
 import { Model, DataTypes, type Sequelize, type Optional } from "sequelize";
+import type {
+  BelongsToManyGetAssociationsMixin,
+  BelongsToManySetAssociationsMixin,
+} from "sequelize";
 import type { UserRole } from "../../auth/types";
+import type { Goal } from "./Goal";
 
 export interface UserAttributes {
   id: string;
@@ -29,6 +34,8 @@ export class User
   declare emailVerified: boolean;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
+  declare getGoals: BelongsToManyGetAssociationsMixin<Goal>;
+  declare setGoals: BelongsToManySetAssociationsMixin<Goal, string>;
 
   static initModel(sequelize: Sequelize): typeof User {
     User.init(
