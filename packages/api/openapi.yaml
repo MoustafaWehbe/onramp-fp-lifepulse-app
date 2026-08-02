@@ -193,7 +193,19 @@ components:
 
     AreaColor:
       type: string
-      enum: [health, career, spirit, social, learning, creative]
+      enum:
+        [
+          health,
+          career,
+          spirit,
+          social,
+          learning,
+          creative,
+          finance,
+          family,
+          adventure,
+          rest,
+        ]
 
     LifeArea:
       type: object

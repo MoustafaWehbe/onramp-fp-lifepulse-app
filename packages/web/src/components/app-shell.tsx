@@ -9,6 +9,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useApp } from "@/lib/store";
+import { useAreas } from "@/hooks/useAreas";
 import { areaTokens } from "@/lib/area-colors";
 import { AreaDot } from "@/components/area/area-dot";
 import { cn } from "@/lib/utils";
@@ -24,7 +25,8 @@ const nav = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const { areas, profile, hydrated } = useApp();
+  const { profile, hydrated } = useApp();
+  const { data: areas = [] } = useAreas();
   const { user, logout } = useAuth();
 
   const displayName = user?.name ?? profile.name;

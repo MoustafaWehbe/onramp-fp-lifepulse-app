@@ -1,10 +1,11 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useState, type FormEvent } from "react";
-import { Plus, Trash2, ArrowLeft, Check } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Check, Loader2 } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { AreaProgress } from "@/components/area/area-progress";
 import { AreaPct } from "@/components/area/area-badge";
 import { useApp, todayStr, type Frequency } from "@/lib/store";
+import { useAreas, useDeleteArea } from "@/hooks/useAreas";
 import { areaStyle, areaTokens } from "@/lib/area-colors";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,14 +26,32 @@ const FREQ: { value: Frequency; label: string }[] = [
 export function AreaDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { areas, habits, checkins, addHabit, removeHabit, removeArea, toggleCheckin } =
-    useApp();
+  const { habits, checkins, addHabit, removeHabit, toggleCheckin } = useApp();
+  const { data: areas = [], isLoading: areasLoading } = useAreas();
+  const deleteArea = useDeleteArea();
   const area = areas.find((a) => a.id === id);
   const [name, setName] = useState("");
   const [freq, setFreq] = useState<Frequency>("daily");
   const [notes, setNotes] = useState("");
   const [touched, setTouched] = useState(false);
   const today = todayStr();
+
+  if (areasLoading) {
+    return (
+      <AppShell>
+        <div
+          className="flex items-center justify-center gap-3 py-20 text-muted-foreground"
+          role="status"
+          aria-live="polite"
+        >
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          <span className="mono text-xs uppercase tracking-widest">
+            Loading area…
+          </span>
+        </div>
+      </AppShell>
+    );
+  }
 
   if (!area) {
     return (
@@ -80,10 +99,16 @@ export function AreaDetail() {
     toast.success("Habit added");
   };
 
-  const deleteArea = () => {
-    removeArea(id!);
-    toast(`"${area.name}" deleted`);
-    navigate("/dashboard");
+  const handleDeleteArea = () => {
+    deleteArea.mutate(id!, {
+      onSuccess: () => {
+        toast(`"${area.name}" deleted`);
+        navigate("/dashboard");
+      },
+      onError: () => {
+        toast.error("Couldn't delete the area. Please try again.");
+      },
+    });
   };
 
   return (
@@ -113,9 +138,14 @@ export function AreaDetail() {
               description="This permanently removes the area and all its habits and check-ins. This action cannot be undone."
               confirmLabel="Delete area"
               destructive
-              onConfirm={deleteArea}
+              onConfirm={handleDeleteArea}
               trigger={
-                <Button variant="outline" size="sm" type="button">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  disabled={deleteArea.isPending}
+                >
                   <Trash2 className="size-3.5" aria-hidden="true" /> Delete
                   area
                 </Button>

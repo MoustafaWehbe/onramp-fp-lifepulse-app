@@ -4,6 +4,7 @@ import { AreaPct } from "@/components/area/area-badge";
 import { cn } from "@/lib/utils";
 import { AreaDot } from "@/components/area/area-dot";
 import { useApp } from "@/lib/store";
+import { useAreas } from "@/hooks/useAreas";
 import { areaMix, areaTokens } from "@/lib/area-colors";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -18,7 +19,8 @@ import {
 import { Flame, Calendar, Target } from "lucide-react";
 
 export function ProgressPage() {
-  const { areas, habits, checkins } = useApp();
+  const { habits, checkins } = useApp();
+  const { data: areas = [] } = useAreas();
   const [windowDays, setWindowDays] = useState<7 | 14 | 30>(14);
 
   const days = useMemo(() => {
