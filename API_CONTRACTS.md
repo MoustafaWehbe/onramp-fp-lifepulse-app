@@ -8,7 +8,8 @@
 | Group | Endpoints | Implemented |
 |-------|-----------|-------------|
 | Auth | 5 | Yes |
-| Profile | 3 | No |
+| Profile | 3 | Yes |
+| Goals | 1 | Yes |
 | Life Areas | 5 | Yes |
 | Habits | 5 | No |
 | Check-ins | 4 | No |
@@ -47,6 +48,11 @@
 | PATCH | `/profile` | Yes |
 | PATCH | `/profile/onboarding` | Yes |
 
+### Goals
+| Method | Path | Auth |
+|--------|------|------|
+| GET | `/goals` | No |
+
 ### Life Areas
 | Method | Path | Auth |
 |--------|------|------|
@@ -84,7 +90,7 @@ type Frequency = "daily" | "weekdays" | "3x" | "5x" | "weekly"
 interface LifeArea { id, name, color: AreaColor, description? }
 interface Habit { id, areaId, name, frequency: Frequency, notes? }
 interface CheckIn { id, habitId, date: "YYYY-MM-DD" }
-interface Profile { name, email, age?, jobTitle?, goals[], stressLevel?, sleepHours?, onboarded }
+interface Profile { name, email, ageRange?, profession?, industry?, educationLevel?, livingSituation?, lifestyleTypes[], stressSources[], dailyFreeTime?, energyPattern?, stressBaseline?, workloadIntensity?, motivationDriver?, failureResponse?, topValues[], identityStatements[], badHabits[], goals[], stressLevel?, sleepHours?, onboarded }
 ```
 
 See Swagger for full request/response schemas and examples.

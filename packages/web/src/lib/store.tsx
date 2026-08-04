@@ -53,7 +53,7 @@ export interface Profile {
   livingSituation?: LivingSituation;
   lifestyleTypes?: string[];
   stressSources?: string[];
-  dailyFreeTime?: number; // minutes/day
+  dailyFreeTime?: number; 
   energyPattern?: EnergyPattern;
   stressBaseline?: StressBaseline;
   workloadIntensity?: WorkloadIntensity;

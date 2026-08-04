@@ -8,7 +8,7 @@ info:
 
     **Auth:** HttpOnly cookies (`accessToken`, `refreshToken`). Use `credentials: "include"` on all requests.
 
-    **Status:** Auth endpoints are implemented. Profile, Life Areas, Habits, and Check-ins are documented for team review — not yet implemented on the server.
+    **Status:** Auth, Profile, Goals, and Life Areas are implemented. Habits and Check-ins are documented for team review — not yet implemented on the server.
 
 servers:
   - url: /api
@@ -19,6 +19,8 @@ tags:
     description: Authentication and session management
   - name: Profile
     description: User profile and onboarding
+  - name: Goals
+    description: Goal catalog used during onboarding and profile editing
   - name: Life Areas
     description: Life area categories that group habits
   - name: Habits
@@ -93,27 +95,77 @@ components:
     Profile:
       type: object
       properties:
-        userId:
-          type: string
-          format: uuid
         name:
           type: string
         email:
           type: string
           format: email
           readOnly: true
-        age:
-          type: integer
-          minimum: 1
-          maximum: 120
-          nullable: true
-        jobTitle:
+        ageRange:
           type: string
-          maxLength: 100
+          enum: ["18-24", "25-34", "35-44", "45-54", "55+"]
           nullable: true
+        profession:
+          type: string
+          maxLength: 255
+          nullable: true
+        industry:
+          type: string
+          maxLength: 255
+          nullable: true
+        educationLevel:
+          type: string
+          enum: [high_school, associate, bachelor, master, doctorate, other]
+          nullable: true
+        livingSituation:
+          type: string
+          enum: [apartment, house, dormitory, other]
+          nullable: true
+        lifestyleTypes:
+          type: array
+          items:
+            type: string
+        stressSources:
+          type: array
+          items:
+            type: string
+        dailyFreeTime:
+          type: integer
+          nullable: true
+        energyPattern:
+          type: string
+          enum: [morning, afternoon, evening]
+          nullable: true
+        stressBaseline:
+          type: string
+          enum: [low, medium, high]
+          nullable: true
+        workloadIntensity:
+          type: string
+          enum: [low, medium, high]
+          nullable: true
+        motivationDriver:
+          type: string
+          enum: [achievement, health, family, financial_freedom, other]
+          nullable: true
+        failureResponse:
+          type: string
+          nullable: true
+        topValues:
+          type: array
+          items:
+            type: string
+        identityStatements:
+          type: array
+          items:
+            type: string
+        badHabits:
+          type: array
+          items:
+            type: string
         goals:
           type: array
-          maxItems: 10
+          maxItems: 20
           items:
             type: string
             maxLength: 200
@@ -129,27 +181,78 @@ components:
           nullable: true
         onboarded:
           type: boolean
-        updatedAt:
-          type: string
-          format: date-time
+
+    Goal:
+          type: object
+          properties:
+            slug:
+              type: string
+              example: "focus-clarity"
+            label:
+              type: string
+              example: "Focus & Clarity"
 
     UpdateProfileBody:
       type: object
       properties:
         name:
           type: string
-          minLength: 2
+          minLength: 1
           maxLength: 100
-        age:
-          type: integer
-          minimum: 1
-          maximum: 120
-        jobTitle:
+        ageRange:
           type: string
-          maxLength: 100
+          enum: ["18-24", "25-34", "35-44", "45-54", "55+"]
+        profession:
+          type: string
+          maxLength: 255
+        industry:
+          type: string
+          maxLength: 255
+        educationLevel:
+          type: string
+          enum: [high_school, associate, bachelor, master, doctorate, other]
+        livingSituation:
+          type: string
+          enum: [apartment, house, dormitory, other]
+        lifestyleTypes:
+          type: array
+          items:
+            type: string
+        stressSources:
+          type: array
+          items:
+            type: string
+        dailyFreeTime:
+          type: integer
+        energyPattern:
+          type: string
+          enum: [morning, afternoon, evening]
+        stressBaseline:
+          type: string
+          enum: [low, medium, high]
+        workloadIntensity:
+          type: string
+          enum: [low, medium, high]
+        motivationDriver:
+          type: string
+          enum: [achievement, health, family, financial_freedom, other]
+        failureResponse:
+          type: string
+        topValues:
+          type: array
+          items:
+            type: string
+        identityStatements:
+          type: array
+          items:
+            type: string
+        badHabits:
+          type: array
+          items:
+            type: string
         goals:
           type: array
-          maxItems: 10
+          maxItems: 20
           items:
             type: string
             maxLength: 200
@@ -163,33 +266,10 @@ components:
           maximum: 24
 
     OnboardingBody:
-      type: object
-      properties:
-        name:
-          type: string
-          minLength: 2
-          maxLength: 100
-        age:
-          type: integer
-          minimum: 1
-          maximum: 120
-        jobTitle:
-          type: string
-          maxLength: 100
-        goals:
-          type: array
-          maxItems: 10
-          items:
-            type: string
-            maxLength: 200
-        stressLevel:
-          type: integer
-          minimum: 1
-          maximum: 10
-        sleepHours:
-          type: number
-          minimum: 0
-          maximum: 24
+      allOf:
+        - $ref: "#/components/schemas/UpdateProfileBody"
+        - type: object
+          required: [goals]
 
     AreaColor:
       type: string
@@ -633,7 +713,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MessageResponse"
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Profile"
         "401":
           description: Unauthorized
           content:
@@ -641,6 +724,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /goals:
+      get:
+        tags: [Goals]
+        summary: List available goals
+        operationId: listGoals
+        description: Returns the full goal catalog. No auth required.
+        responses:
+          "200":
+            description: Goal catalog
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/Goal"
+                        
   /areas:
     get:
       tags: [Life Areas]
