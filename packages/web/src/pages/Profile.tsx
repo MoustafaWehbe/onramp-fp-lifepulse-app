@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent, type ReactNode } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import {
   useApp,
+  type Profile as ProfileType,
   type AgeRange,
   type EducationLevel,
   type LivingSituation,
@@ -10,6 +11,8 @@ import {
   type WorkloadIntensity,
   type MotivationDriver,
 } from "@/lib/store";
+import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
+import { useGoals } from "@/hooks/useGoals";
 import { areaTokens } from "@/lib/area-colors";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -21,17 +24,8 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { PillSelect, TagInput } from "@/components/profile-fields";
 import { toast } from "sonner";
 import { RotateCcw, Sparkles } from "lucide-react";
+import axios from "axios";
 
-const GOALS = [
-  "Focus & Clarity",
-  "Physical Vitality",
-  "Career Growth",
-  "Better Sleep",
-  "Stress Reduction",
-  "Creative Mastery",
-  "Stronger Relationships",
-  "Learning",
-];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const AGE_RANGE_OPTIONS: { value: AgeRange; label: string }[] = [
@@ -79,18 +73,48 @@ const MOTIVATION_OPTIONS: { value: MotivationDriver; label: string }[] = [
 ];
 
 export function ProfilePage() {
-  const { profile, setProfile, reset } = useApp();
+  const { data: profile, isPending, isError } = useProfile();
+
+  if (isPending) {
+    return (
+      <AppShell>
+        <PageHeader eyebrow="Account" title="Your profile." />
+        <p className="text-sm text-muted-foreground">Loading your profile…</p>
+      </AppShell>
+    );
+  }
+
+  if (isError || !profile) {
+    return (
+      <AppShell>
+        <PageHeader eyebrow="Account" title="Your profile." />
+        <p className="text-sm text-destructive">
+          Couldn't load your profile. Try refreshing the page.
+        </p>
+      </AppShell>
+    );
+  }
+
+  return <ProfileForm initialProfile={profile} />;
+}
+
+function ProfileForm({ initialProfile }: { initialProfile: ProfileType }) {
+  const { reset } = useApp();
   const { user } = useAuth();
-  const [form, setForm] = useState(profile);
+  const updateProfile = useUpdateProfile();
+  const { data: goalCatalog } = useGoals();
+  const goalLabels = goalCatalog?.map((g) => g.label) ?? [];
+
+  const [form, setForm] = useState<ProfileType>(initialProfile);
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
     setForm({
-      ...profile,
-      name: user?.name ?? profile.name,
-      email: user?.email ?? profile.email,
+      ...initialProfile,
+      name: user?.name ?? initialProfile.name,
+      email: user?.email ?? initialProfile.email,
     });
-  }, [profile, user]);
+  }, [initialProfile, user]);
 
   const toggleGoal = (g: string) =>
     setForm((f) => ({
@@ -105,24 +129,23 @@ export function ProfilePage() {
     touched && form.email && !EMAIL_RE.test(form.email)
       ? "Please enter a valid email."
       : "";
-  // const ageError =
-  //   touched && form.age !== undefined && (form.age < 13 || form.age > 120)
-  //     ? "Age must be 13–120."
-  //     : "";
 
   const valid = !nameError && !emailError;
 
-  const save = (e: FormEvent) => {
+const save = async (e: FormEvent) => {
     e.preventDefault();
     setTouched(true);
-    if (
-      !form.name.trim() ||
-      (form.email && !EMAIL_RE.test(form.email)) 
-      // (form.age !== undefined && (form.age < 13 || form.age > 120))
-    )
+    if (!form.name.trim() || (form.email && !EMAIL_RE.test(form.email)))
       return;
-    setProfile(form);
-    toast.success("Profile updated — AI suggestions will refresh");
+    try {
+      await updateProfile.mutateAsync(form);
+      toast.success("Profile updated — AI suggestions will refresh");
+    } catch (err) {
+      const message =
+        (axios.isAxiosError(err) && err.response?.data?.error) ||
+        "Couldn't save changes — please try again";
+      toast.error(message);
+    }
   };
 
   return (
@@ -177,38 +200,6 @@ export function ProfilePage() {
                     }
                   />
                 </Field>
-                {/* <Field label="Age" htmlFor="p-age" error={ageError}>
-                  <Input
-                    id="p-age"
-                    name="age"
-                    type="number"
-                    inputMode="numeric"
-                    min={13}
-                    max={120}
-                    aria-invalid={!!ageError}
-                    aria-describedby={ageError ? "p-age-err" : undefined}
-                    value={form.age ?? ""}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        age: e.target.value
-                          ? Number(e.target.value)
-                          : undefined,
-                      })
-                    }
-                  />
-                </Field> */}
-                {/* <Field label="Job title" htmlFor="p-job">
-                  <Input
-                    id="p-job"
-                    name="jobTitle"
-                    autoComplete="organization-title"
-                    value={form.jobTitle ?? ""}
-                    onChange={(e) =>
-                      setForm({ ...form, jobTitle: e.target.value })
-                    }
-                  />
-                </Field> */}
               </div>
 
               <Separator />
@@ -276,7 +267,7 @@ export function ProfilePage() {
                   role="group"
                   aria-label="Top goals"
                 >
-                  {GOALS.map((g) => {
+                  {goalLabels.map((g) => {
                     const on = form.goals.includes(g);
                     return (
                       <button
@@ -484,7 +475,7 @@ export function ProfilePage() {
             <CardFooter className="justify-between border-t border-border pt-4">
               <ConfirmDialog
                 title="Reset all data?"
-                description="This wipes your profile, areas, habits and check-ins, and restores the demo seed data."
+                description="This wipes your areas, habits and check-ins, and restores the demo seed data."
                 confirmLabel="Reset everything"
                 destructive
                 onConfirm={() => {

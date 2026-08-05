@@ -67,7 +67,8 @@ function serializeProfile(user: User, profile: UserProfile | null, goalLabels: s
     identityStatements: profile?.identityStatements ?? [],
     badHabits: profile?.badHabits ?? [],
     stressLevel: profile?.stressLevel,
-    sleepHours: profile?.sleepHours,
+    sleepHours:
+      profile?.sleepHours != null ? Number(profile.sleepHours) : undefined,
     goals: goalLabels,
     onboarded: profile?.onboarded ?? false,
   };

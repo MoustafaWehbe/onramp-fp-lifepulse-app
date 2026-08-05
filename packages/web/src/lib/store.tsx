@@ -32,6 +32,7 @@ export interface CheckIn {
   date: string;
   habitId: string;
 }
+
 export type AgeRange = "18-24" | "25-34" | "35-44" | "45-54" | "55+";
 export type EducationLevel =
   | "high_school"
@@ -50,7 +51,10 @@ export type MotivationDriver =
   | "family"
   | "financial_freedom"
   | "other";
-  
+
+// Profile now lives server-side (see hooks/useProfile.ts) — this type is
+// kept here since it's the shared shape both the API hooks and any
+// remaining consumers import, but AppState below no longer stores it.
 export interface Profile {
   name: string;
   email: string;
@@ -61,7 +65,7 @@ export interface Profile {
   livingSituation?: LivingSituation;
   lifestyleTypes?: string[];
   stressSources?: string[];
-  dailyFreeTime?: number; 
+  dailyFreeTime?: number;
   energyPattern?: EnergyPattern;
   stressBaseline?: StressBaseline;
   workloadIntensity?: WorkloadIntensity;
@@ -78,11 +82,9 @@ export interface Profile {
 
 interface AppState {
   hydrated: boolean;
-  profile: Profile;
   areas: LifeArea[];
   habits: Habit[];
   checkins: CheckIn[];
-  setProfile: (p: Partial<Profile>) => void;
   addArea: (a: Omit<LifeArea, "id">) => string;
   updateArea: (id: string, a: Partial<LifeArea>) => void;
   removeArea: (id: string) => void;
@@ -96,17 +98,7 @@ interface AppState {
 
 const KEY = "habitgarden:v1";
 
-const defaultProfile: Profile = {
-  name: "",
-  email: "",
-  goals: [],
-  onboarded: false,
-};
-
-const seedData = (): Pick<
-  AppState,
-  "profile" | "areas" | "habits" | "checkins"
-> => {
+const seedData = (): Pick<AppState, "areas" | "habits" | "checkins"> => {
   const today = new Date();
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
   const areas: LifeArea[] = [
@@ -200,21 +192,7 @@ const seedData = (): Pick<
     checkins.push({ date: todayStr, habitId: id }),
   );
 
-  return {
-    profile: {
-      ...defaultProfile,
-      name: "Elena Rivers",
-      email: "elena@example.com",
-      // age: 31,
-      goals: ["Focus", "Health", "Learning"],
-      stressLevel: 6,
-      sleepHours: 6.5,
-      onboarded: true,
-    },
-    areas,
-    habits,
-    checkins,
-  };
+  return { areas, habits, checkins };
 };
 
 const Ctx = createContext<AppState | null>(null);
@@ -230,7 +208,6 @@ const load = () => {
 };
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const [profile, setProfileState] = useState<Profile>(defaultProfile);
   const [areas, setAreas] = useState<LifeArea[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [checkins, setCheckins] = useState<CheckIn[]>([]);
@@ -239,13 +216,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const data = load();
     if (data) {
-      setProfileState(data.profile ?? defaultProfile);
       setAreas(data.areas ?? []);
       setHabits(data.habits ?? []);
       setCheckins(data.checkins ?? []);
     } else {
       const s = seedData();
-      setProfileState(s.profile);
       setAreas(s.areas);
       setHabits(s.habits);
       setCheckins(s.checkins);
@@ -255,19 +230,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(
-      KEY,
-      JSON.stringify({ profile, areas, habits, checkins }),
-    );
-  }, [profile, areas, habits, checkins, hydrated]);
+    localStorage.setItem(KEY, JSON.stringify({ areas, habits, checkins }));
+  }, [areas, habits, checkins, hydrated]);
 
   const value: AppState = {
     hydrated,
-    profile,
     areas,
     habits,
     checkins,
-    setProfile: (p) => setProfileState((cur) => ({ ...cur, ...p })),
     addArea: (a) => {
       const id = `area-${Date.now()}`;
       setAreas((cur) => [...cur, { ...a, id }]);
@@ -310,7 +280,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     reset: () => {
       localStorage.removeItem(KEY);
       const s = seedData();
-      setProfileState(s.profile);
       setAreas(s.areas);
       setHabits(s.habits);
       setCheckins(s.checkins);
