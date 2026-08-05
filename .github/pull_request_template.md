@@ -26,12 +26,6 @@
 - [ ] Config / env vars
 - [ ] Other: <!-- describe -->
 
-## Related
-
-<!-- Link issues, tickets, or prior PRs. Delete if none. -->
-
-- Closes #
-- Related to #
 
 ## What changed
 
@@ -40,9 +34,6 @@
 -
 -
 
-## Why
-
-<!-- Optional but useful for non-obvious changes. Delete if the summary is enough. -->
 
 ## Screenshots / recordings
 
@@ -60,22 +51,6 @@
 2.
 3.
 
-**Expected result:**
-
-## Checklist
-
-- [ ] I tested this locally
-- [ ] I ran lint/tests where relevant (`npm run lint`, `npm run test`)
-- [ ] No secrets or `.env` values committed
-- [ ] Env var / config changes documented (README or `.env.example`)
-- [ ] DB migrations included and reversible (if applicable)
-- [ ] Breaking changes called out below (if any)
-
-## Breaking changes / migration notes
-
-<!-- Delete if none. -->
-
-- None
 
 ## Notes for reviewers
 

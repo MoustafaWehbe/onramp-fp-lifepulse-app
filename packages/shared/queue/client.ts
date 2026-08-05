@@ -4,6 +4,7 @@ import {
   QUEUE_NAMES,
   type EmailJobData,
   type EmbeddingsJobData,
+  type HabitReminderJobData,
 } from "./types";
 
 let redisConnection: IORedis | null = null;
@@ -33,4 +34,9 @@ function createQueue<T>(name: string): Queue<T> {
 export const emailQueue = createQueue<EmailJobData>(QUEUE_NAMES.EMAIL);
 export const embeddingsQueue = createQueue<EmbeddingsJobData>(
   QUEUE_NAMES.EMBEDDINGS,
+);
+// One Job Scheduler per habit (schedulerId === habitId) drives this queue —
+// see packages/api/src/lib/habit-reminders.ts for how schedulers are upserted/removed.
+export const remindersQueue = createQueue<HabitReminderJobData>(
+  QUEUE_NAMES.REMINDERS,
 );
