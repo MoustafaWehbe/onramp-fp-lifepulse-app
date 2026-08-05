@@ -8,7 +8,7 @@ info:
 
     **Auth:** HttpOnly cookies (`accessToken`, `refreshToken`). Use `credentials: "include"` on all requests.
 
-    **Status:** Auth, Profile, Goals, and Life Areas are implemented. Habits and Check-ins are documented for team review — not yet implemented on the server.
+    **Status:** Auth, Profile, Goals, Life Areas, Habits, and Check-ins are implemented.
 
 servers:
   - url: /api
@@ -368,6 +368,10 @@ components:
       type: string
       enum: [daily, weekdays, 3x, 5x, weekly]
 
+    Difficulty:
+      type: string
+      enum: [easy, medium, hard]
+
     Habit:
       type: object
       properties:
@@ -382,9 +386,36 @@ components:
           maxLength: 100
         frequency:
           $ref: "#/components/schemas/Frequency"
+        durationMinutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+          nullable: true
+        difficulty:
+          allOf:
+            - $ref: "#/components/schemas/Difficulty"
+          nullable: true
         notes:
           type: string
           maxLength: 500
+          nullable: true
+        reminderEnabled:
+          type: boolean
+          description: Whether a reminder is scheduled for this habit.
+        reminderTime:
+          type: string
+          pattern: "^([01]\\d|2[0-3]):[0-5]\\d$"
+          example: "07:30"
+          nullable: true
+          description: 24-hour local time the reminder fires at. Required when reminderEnabled is true.
+        timezone:
+          type: string
+          example: "America/New_York"
+          nullable: true
+          description: IANA timezone reminderTime is expressed in. Required when reminderEnabled is true.
+        archivedAt:
+          type: string
+          format: date-time
           nullable: true
         createdAt:
           type: string
@@ -406,9 +437,27 @@ components:
           maxLength: 100
         frequency:
           $ref: "#/components/schemas/Frequency"
+        durationMinutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+        difficulty:
+          $ref: "#/components/schemas/Difficulty"
         notes:
           type: string
           maxLength: 500
+        reminderEnabled:
+          type: boolean
+          default: false
+        reminderTime:
+          type: string
+          pattern: "^([01]\\d|2[0-3]):[0-5]\\d$"
+          example: "07:30"
+          description: Required when reminderEnabled is true.
+        timezone:
+          type: string
+          example: "America/New_York"
+          description: Required when reminderEnabled is true.
 
     UpdateHabitBody:
       type: object
@@ -422,9 +471,29 @@ components:
           maxLength: 100
         frequency:
           $ref: "#/components/schemas/Frequency"
+        durationMinutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+          nullable: true
+        difficulty:
+          allOf:
+            - $ref: "#/components/schemas/Difficulty"
+          nullable: true
         notes:
           type: string
           maxLength: 500
+          nullable: true
+        reminderEnabled:
+          type: boolean
+        reminderTime:
+          type: string
+          pattern: "^([01]\\d|2[0-3]):[0-5]\\d$"
+          example: "07:30"
+          nullable: true
+        timezone:
+          type: string
+          example: "America/New_York"
           nullable: true
 
     CheckIn:
@@ -952,6 +1021,13 @@ paths:
             type: string
             format: uuid
           description: Filter by life area
+        - name: includeArchived
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["true", "false"]
+          description: Include archived habits. Defaults to false.
       responses:
         "200":
           description: List of habits
@@ -1132,6 +1208,94 @@ paths:
       responses:
         "204":
           description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Habit not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /habits/{id}/archive:
+    post:
+      tags: [Habits]
+      summary: Archive a habit
+      description: Soft-deletes the habit (hidden from default lists, check-in history preserved) and cancels its reminder.
+      operationId: archiveHabit
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Archived habit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Habit"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Habit not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /habits/{id}/restore:
+    post:
+      tags: [Habits]
+      summary: Restore an archived habit
+      description: Un-archives the habit and re-schedules its reminder if reminderEnabled is true.
+      operationId: restoreHabit
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Restored habit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Habit"
         "401":
           description: Unauthorized
           content:
