@@ -6,7 +6,11 @@ export type AreaColor =
   | "spirit"
   | "social"
   | "learning"
-  | "creative";
+  | "creative"
+  | "finance"
+  | "family"
+  | "adventure"
+  | "rest";
 
 export const AREA_COLORS: AreaColor[] = [
   "health",
@@ -15,6 +19,10 @@ export const AREA_COLORS: AreaColor[] = [
   "social",
   "learning",
   "creative",
+  "finance",
+  "family",
+  "adventure",
+  "rest",
 ];
 
 export const AREA_PRESETS: { name: string; color: AreaColor }[] = [
@@ -24,6 +32,10 @@ export const AREA_PRESETS: { name: string; color: AreaColor }[] = [
   { name: "Social", color: "social" },
   { name: "Learning", color: "learning" },
   { name: "Creative", color: "creative" },
+  { name: "Finance", color: "finance" },
+  { name: "Family", color: "family" },
+  { name: "Adventure", color: "adventure" },
+  { name: "Rest", color: "rest" },
 ];
 
 export interface AreaTokens {
@@ -133,6 +145,66 @@ export const areaTokens: Record<AreaColor, AreaTokens> = {
     navItemHover: "hover:bg-area-creative/10 hover:text-area-creative",
     navItemActive: "bg-area-creative/10 text-area-creative",
   },
+  finance: {
+    cssVar: "var(--area-finance)",
+    bg: "bg-area-finance",
+    bgSoft: "bg-area-finance/10",
+    bgFaint: "bg-area-finance/5",
+    text: "text-area-finance",
+    border: "border-area-finance",
+    ring: "ring-area-finance/30",
+    ringSolid: "ring-area-finance",
+    ringHover: "group-hover:ring-area-finance/40",
+    hoverCardRing: "hover:ring-2 hover:ring-area-finance/50",
+    hoverCardBg: "hover:bg-area-finance/5",
+    navItemHover: "hover:bg-area-finance/10 hover:text-area-finance",
+    navItemActive: "bg-area-finance/10 text-area-finance",
+  },
+  family: {
+    cssVar: "var(--area-family)",
+    bg: "bg-area-family",
+    bgSoft: "bg-area-family/10",
+    bgFaint: "bg-area-family/5",
+    text: "text-area-family",
+    border: "border-area-family",
+    ring: "ring-area-family/30",
+    ringSolid: "ring-area-family",
+    ringHover: "group-hover:ring-area-family/40",
+    hoverCardRing: "hover:ring-2 hover:ring-area-family/50",
+    hoverCardBg: "hover:bg-area-family/5",
+    navItemHover: "hover:bg-area-family/10 hover:text-area-family",
+    navItemActive: "bg-area-family/10 text-area-family",
+  },
+  adventure: {
+    cssVar: "var(--area-adventure)",
+    bg: "bg-area-adventure",
+    bgSoft: "bg-area-adventure/10",
+    bgFaint: "bg-area-adventure/5",
+    text: "text-area-adventure",
+    border: "border-area-adventure",
+    ring: "ring-area-adventure/30",
+    ringSolid: "ring-area-adventure",
+    ringHover: "group-hover:ring-area-adventure/40",
+    hoverCardRing: "hover:ring-2 hover:ring-area-adventure/50",
+    hoverCardBg: "hover:bg-area-adventure/5",
+    navItemHover: "hover:bg-area-adventure/10 hover:text-area-adventure",
+    navItemActive: "bg-area-adventure/10 text-area-adventure",
+  },
+  rest: {
+    cssVar: "var(--area-rest)",
+    bg: "bg-area-rest",
+    bgSoft: "bg-area-rest/10",
+    bgFaint: "bg-area-rest/5",
+    text: "text-area-rest",
+    border: "border-area-rest",
+    ring: "ring-area-rest/30",
+    ringSolid: "ring-area-rest",
+    ringHover: "group-hover:ring-area-rest/40",
+    hoverCardRing: "hover:ring-2 hover:ring-area-rest/50",
+    hoverCardBg: "hover:bg-area-rest/5",
+    navItemHover: "hover:bg-area-rest/10 hover:text-area-rest",
+    navItemActive: "bg-area-rest/10 text-area-rest",
+  },
 };
 
 /** @deprecated Use areaTokens instead */
@@ -181,6 +253,34 @@ export const AREA_COLOR_MAP: Record<
     text: areaTokens.creative.text,
     ring: areaTokens.creative.ring,
     raw: areaTokens.creative.cssVar,
+  },
+  finance: {
+    bg: areaTokens.finance.bg,
+    bgSoft: areaTokens.finance.bgSoft,
+    text: areaTokens.finance.text,
+    ring: areaTokens.finance.ring,
+    raw: areaTokens.finance.cssVar,
+  },
+  family: {
+    bg: areaTokens.family.bg,
+    bgSoft: areaTokens.family.bgSoft,
+    text: areaTokens.family.text,
+    ring: areaTokens.family.ring,
+    raw: areaTokens.family.cssVar,
+  },
+  adventure: {
+    bg: areaTokens.adventure.bg,
+    bgSoft: areaTokens.adventure.bgSoft,
+    text: areaTokens.adventure.text,
+    ring: areaTokens.adventure.ring,
+    raw: areaTokens.adventure.cssVar,
+  },
+  rest: {
+    bg: areaTokens.rest.bg,
+    bgSoft: areaTokens.rest.bgSoft,
+    text: areaTokens.rest.text,
+    ring: areaTokens.rest.ring,
+    raw: areaTokens.rest.cssVar,
   },
 };
 

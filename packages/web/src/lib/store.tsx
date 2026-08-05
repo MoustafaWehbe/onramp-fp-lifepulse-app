@@ -8,14 +8,6 @@ import {
 
 export type { AreaColor } from "./area-colors";
 export { AREA_COLOR_MAP } from "./area-colors";
-import type { AreaColor } from "./area-colors";
-
-export interface LifeArea {
-  id: string;
-  name: string;
-  color: AreaColor;
-  description?: string;
-}
 
 export type Frequency = "daily" | "weekdays" | "3x" | "5x" | "weekly";
 
@@ -101,32 +93,6 @@ const KEY = "habitgarden:v1";
 const seedData = (): Pick<AppState, "areas" | "habits" | "checkins"> => {
   const today = new Date();
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
-  const areas: LifeArea[] = [
-    {
-      id: "a-health",
-      name: "Health",
-      color: "health",
-      description: "Body & energy",
-    },
-    {
-      id: "a-career",
-      name: "Career",
-      color: "career",
-      description: "Deep work & growth",
-    },
-    {
-      id: "a-spirit",
-      name: "Mind",
-      color: "spirit",
-      description: "Stillness & reflection",
-    },
-    {
-      id: "a-social",
-      name: "Social",
-      color: "social",
-      description: "People who matter",
-    },
-  ];
   const habits: Habit[] = [
     {
       id: "h1",

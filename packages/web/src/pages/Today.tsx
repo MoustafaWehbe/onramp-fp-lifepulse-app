@@ -2,13 +2,15 @@ import { useMemo } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { AreaDot } from "@/components/area/area-dot";
 import { useApp, todayStr } from "@/lib/store";
+import { useAreas } from "@/hooks/useAreas";
 import { areaTokens } from "@/lib/area-colors";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { Check } from "lucide-react";
 
 export function TodayPage() {
-  const { areas, habits, checkins, toggleCheckin } = useApp();
+  const { habits, checkins, toggleCheckin } = useApp();
+  const { data: areas = [] } = useAreas();
   const today = todayStr();
 
   const grouped = useMemo(

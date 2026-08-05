@@ -6,6 +6,7 @@ import { AreaBadge, AreaPct } from "@/components/area/area-badge";
 import { AreaDot } from "@/components/area/area-dot";
 import { AreaProgress } from "@/components/area/area-progress";
 import { useApp, todayStr } from "@/lib/store";
+import { useAreas, useCreateArea } from "@/hooks/useAreas";
 import { AREA_COLORS, areaTokens, type AreaColor } from "@/lib/area-colors";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,9 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 
 export function Dashboard() {
-  const { areas, habits, checkins, addArea } = useApp();
+  const { habits, checkins } = useApp();
+  const { data: areas = [], isLoading: areasLoading } = useAreas();
+  const createArea = useCreateArea();
   const today = todayStr();
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState("");
@@ -45,12 +48,21 @@ export function Dashboard() {
 
   const create = (e: FormEvent) => {
     e.preventDefault();
-    if (!newName.trim()) return;
-    addArea({ name: newName.trim(), color: newColor });
     const created = newName.trim();
-    setNewName("");
-    setShowNew(false);
-    toast.success(`Area "${created}" created`);
+    if (!created) return;
+    createArea.mutate(
+      { name: created, color: newColor },
+      {
+        onSuccess: () => {
+          setNewName("");
+          setShowNew(false);
+          toast.success(`Area "${created}" created`);
+        },
+        onError: () => {
+          toast.error("Couldn't create the area. Please try again.");
+        },
+      },
+    );
   };
 
   return (
@@ -149,8 +161,11 @@ export function Dashboard() {
                     ))}
                   </div>
                 </fieldset>
-                <Button type="submit" disabled={!newName.trim()}>
-                  Create
+                <Button
+                  type="submit"
+                  disabled={!newName.trim() || createArea.isPending}
+                >
+                  {createArea.isPending ? "Creating…" : "Create"}
                 </Button>
               </div>
             </form>
@@ -158,46 +173,54 @@ export function Dashboard() {
         )}
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {areas.map((area) => {
-            const t = areaTokens[area.color];
-            const areaHabits = habits.filter((h) => h.areaId === area.id);
-            const areaDone = areaHabits.filter((h) =>
-              checkins.some((c) => c.habitId === h.id && c.date === today),
-            ).length;
-            const pct = areaHabits.length
-              ? Math.round((areaDone / areaHabits.length) * 100)
-              : 0;
-            return (
-              <Link
-                key={area.id}
-                to={`/areas/${area.id}`}
-                className={cn(
-                  "block rounded-2xl bg-card p-6 ring-1 ring-black/5 transition-all duration-200",
-                  t.hoverCardRing,
-                  t.hoverCardBg,
-                )}
-              >
-                <div className="mb-8 flex items-center justify-between">
-                  <AreaBadge color={area.color}>{area.name}</AreaBadge>
-                  <AreaPct value={pct} color={area.color} />
-                </div>
-                <h3 className="text-lg font-bold">
-                  {areaHabits.length} habit
-                  {areaHabits.length === 1 ? "" : "s"}
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {areaDone} of {areaHabits.length} done today
-                </p>
-                <AreaProgress
-                  value={pct}
-                  color={area.color}
-                  className="mt-6 h-1"
-                  aria-label={`${area.name} today progress`}
-                />
-              </Link>
-            );
-          })}
-          {areas.length === 0 && (
+          {areasLoading && (
+            <div className="col-span-full rounded-2xl border border-dashed border-border bg-surface p-10 text-center">
+              <p className="text-sm text-muted-foreground">
+                Loading life areas…
+              </p>
+            </div>
+          )}
+          {!areasLoading &&
+            areas.map((area) => {
+              const t = areaTokens[area.color];
+              const areaHabits = habits.filter((h) => h.areaId === area.id);
+              const areaDone = areaHabits.filter((h) =>
+                checkins.some((c) => c.habitId === h.id && c.date === today),
+              ).length;
+              const pct = areaHabits.length
+                ? Math.round((areaDone / areaHabits.length) * 100)
+                : 0;
+              return (
+                <Link
+                  key={area.id}
+                  to={`/areas/${area.id}`}
+                  className={cn(
+                    "block rounded-2xl bg-card p-6 ring-1 ring-black/5 transition-all duration-200",
+                    t.hoverCardRing,
+                    t.hoverCardBg,
+                  )}
+                >
+                  <div className="mb-8 flex items-center justify-between">
+                    <AreaBadge color={area.color}>{area.name}</AreaBadge>
+                    <AreaPct value={pct} color={area.color} />
+                  </div>
+                  <h3 className="text-lg font-bold">
+                    {areaHabits.length} habit
+                    {areaHabits.length === 1 ? "" : "s"}
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {areaDone} of {areaHabits.length} done today
+                  </p>
+                  <AreaProgress
+                    value={pct}
+                    color={area.color}
+                    className="mt-6 h-1"
+                    aria-label={`${area.name} today progress`}
+                  />
+                </Link>
+              );
+            })}
+          {!areasLoading && areas.length === 0 && (
             <div className="col-span-full rounded-2xl border border-dashed border-border bg-surface p-10 text-center">
               <p className="text-sm text-muted-foreground">
                 No life areas yet. Create one to start cultivating.

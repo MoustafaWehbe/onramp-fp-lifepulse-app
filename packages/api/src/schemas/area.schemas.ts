@@ -7,6 +7,10 @@ export const AREA_COLORS = [
   "social",
   "learning",
   "creative",
+  "finance",
+  "family",
+  "adventure",
+  "rest",
 ] as const;
 
 export type AreaColor = (typeof AREA_COLORS)[number];
