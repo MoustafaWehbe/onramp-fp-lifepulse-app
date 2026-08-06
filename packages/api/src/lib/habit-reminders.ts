@@ -4,18 +4,31 @@ import type { Habit } from "../models";
 /**
  * Builds a 6-field BullMQ/cron-parser pattern ("sec min hour dom month dow")
  * that fires once a day at the habit's reminderTime, restricted to the days
- * implied by its frequency where that's unambiguous (daily / weekdays).
+ * implied by its frequency where that's unambiguous (daily / weekdays), or
+ * to the habit's explicit `daysOfWeek` when set.
  *
- * "3x" / "5x" / "weekly" habits don't pin down *which* days, so we fire the
- * reminder every day at the chosen time and let the worker suppress it when
- * the habit has already been checked in for the day — see
+ * "3x" / "5x" / "weekly" habits don't pin down *which* days on their own —
+ * if the user hasn't picked explicit days for them via `daysOfWeek`, we fall
+ * back to firing every day and let the worker suppress it once the habit has
+ * already been checked in for the day — see
  * packages/workers/src/jobs/reminders.job.ts.
  */
-function buildCronPattern(reminderTime: string, frequency: Habit["frequency"]): string {
+function buildCronPattern(
+  reminderTime: string,
+  frequency: Habit["frequency"],
+  daysOfWeek?: number[] | null,
+): string {
   const [hourStr, minuteStr] = reminderTime.split(":");
   const hour = Number(hourStr);
   const minute = Number(minuteStr);
-  const dayOfWeek = frequency === "weekdays" ? "1-5" : "*";
+
+  let dayOfWeek = "*";
+  if (daysOfWeek && daysOfWeek.length > 0) {
+    dayOfWeek = daysOfWeek.join(",");
+  } else if (frequency === "weekdays") {
+    dayOfWeek = "1-5";
+  }
+
   return `0 ${minute} ${hour} * * ${dayOfWeek}`;
 }
 
@@ -43,7 +56,11 @@ export async function syncHabitReminder(habit: Habit): Promise<void> {
     return;
   }
 
-  const pattern = buildCronPattern(habit.reminderTime!.slice(0, 5), habit.frequency);
+  const pattern = buildCronPattern(
+    habit.reminderTime!.slice(0, 5),
+    habit.frequency,
+    habit.daysOfWeek,
+  );
 
   await remindersQueue.upsertJobScheduler(
     habit.id,

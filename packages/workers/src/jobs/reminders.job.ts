@@ -1,16 +1,12 @@
 import type { Job } from "bullmq";
-import { Habit, HabitCompletion, User, emailQueue } from "@starter-kit/shared";
+import {
+  Habit,
+  HabitCompletion,
+  User,
+  emailQueue,
+  todayInTimeZone,
+} from "@starter-kit/shared";
 import type { HabitReminderJobData, HabitReminderJobResult } from "@starter-kit/shared";
-
-/** Returns "YYYY-MM-DD" for "now" as seen from the given IANA timezone. */
-function todayInTimeZone(timeZone: string): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 /**
  * Fired once per day (per the habit's cron pattern) by the Job Scheduler that

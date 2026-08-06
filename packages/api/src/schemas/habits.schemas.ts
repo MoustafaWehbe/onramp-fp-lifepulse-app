@@ -35,6 +35,16 @@ const timezoneSchema = z
     message: 'Invalid IANA timezone (e.g. "America/New_York", "Europe/Paris")',
   });
 
+// 0=Sun..6=Sat, matching JS Date#getDay() and cron day-of-week. Only
+// meaningful for "3x" / "5x" / "weekly" frequencies.
+const daysOfWeekSchema = z
+  .array(z.number().int().min(0).max(6))
+  .min(1)
+  .max(7)
+  .refine((days) => new Set(days).size === days.length, {
+    message: "daysOfWeek must not contain duplicates",
+  });
+
 export const createHabitSchema = z
   .object({
     areaId: z.string().uuid("Invalid area id"),
@@ -54,6 +64,7 @@ export const createHabitSchema = z
     reminderEnabled: z.boolean().optional().default(false),
     reminderTime: reminderTimeSchema.optional(),
     timezone: timezoneSchema.optional(),
+    daysOfWeek: daysOfWeekSchema.optional(),
   })
   .refine((body) => !body.reminderEnabled || (body.reminderTime && body.timezone), {
     message: "reminderTime and timezone are required when reminderEnabled is true",
@@ -81,6 +92,7 @@ export const updateHabitSchema = z
     reminderEnabled: z.boolean().optional(),
     reminderTime: reminderTimeSchema.nullable().optional(),
     timezone: timezoneSchema.nullable().optional(),
+    daysOfWeek: daysOfWeekSchema.nullable().optional(),
   })
   .refine((body) => Object.keys(body).length > 0, {
     message: "At least one field must be provided",

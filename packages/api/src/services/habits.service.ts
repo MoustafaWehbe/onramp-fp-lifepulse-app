@@ -18,6 +18,7 @@ const UPDATABLE_FIELDS = [
   "reminderEnabled",
   "reminderTime",
   "timezone",
+  "daysOfWeek",
 ] as const;
 
 function serializeHabit(habit: Habit) {
@@ -33,6 +34,7 @@ function serializeHabit(habit: Habit) {
     // Strip Postgres's seconds precision so responses always echo back "HH:mm".
     reminderTime: habit.reminderTime ? habit.reminderTime.slice(0, 5) : null,
     timezone: habit.timezone ?? null,
+    daysOfWeek: habit.daysOfWeek ?? null,
     archivedAt: habit.archivedAt ?? null,
     createdAt: habit.createdAt,
     updatedAt: habit.updatedAt,
@@ -99,6 +101,7 @@ export class HabitsService {
       reminderEnabled: input.reminderEnabled ?? false,
       reminderTime: input.reminderTime,
       timezone: input.timezone,
+      daysOfWeek: input.daysOfWeek,
     });
 
     await this.syncReminder(habit);

@@ -9,3 +9,6 @@ export * from "../queue";
 
 // AI
 export * from "../ai";
+
+// Utils
+export * from "../utils/date";

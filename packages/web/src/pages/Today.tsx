@@ -1,17 +1,20 @@
 import { useMemo } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { AreaDot } from "@/components/area/area-dot";
-import { useApp, todayStr } from "@/lib/store";
 import { useAreas } from "@/hooks/useAreas";
+import { useHabits } from "@/hooks/useHabits";
+import { useTodayCheckIns, useToggleCheckIn, isChecked } from "@/hooks/useCheckIns";
 import { areaTokens } from "@/lib/area-colors";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { Check } from "lucide-react";
+import { toast } from "sonner";
 
 export function TodayPage() {
-  const { habits, checkins, toggleCheckin } = useApp();
+  const { data: habits = [] } = useHabits();
+  const { data: checkins = [] } = useTodayCheckIns();
+  const toggleCheckIn = useToggleCheckIn();
   const { data: areas = [] } = useAreas();
-  const today = todayStr();
 
   const grouped = useMemo(
     () =>
@@ -23,10 +26,17 @@ export function TodayPage() {
   );
 
   const total = habits.length;
-  const done = habits.filter((h) =>
-    checkins.some((c) => c.habitId === h.id && c.date === today),
-  ).length;
+  const done = habits.filter((h) => isChecked(checkins, h.id)).length;
   const pct = total ? Math.round((done / total) * 100) : 0;
+
+  const handleToggle = (habitId: string) => {
+    toggleCheckIn.mutate(
+      { habitId },
+      {
+        onError: () => toast.error("Couldn't update check-in. Please try again."),
+      },
+    );
+  };
 
   return (
     <AppShell>
@@ -67,7 +77,7 @@ export function TodayPage() {
           {grouped.map(({ area, items }) => {
             if (items.length === 0) return null;
             const areaDone = items.filter((h) =>
-              checkins.some((c) => c.habitId === h.id && c.date === today),
+              isChecked(checkins, h.id),
             ).length;
             const t = areaTokens[area.color];
             return (
@@ -94,9 +104,7 @@ export function TodayPage() {
 
                 <ul className="space-y-2" role="list">
                   {items.map((h) => {
-                    const isDone = checkins.some(
-                      (c) => c.habitId === h.id && c.date === today,
-                    );
+                    const isDone = isChecked(checkins, h.id);
                     return (
                       <li key={h.id}>
                         <button
@@ -104,7 +112,8 @@ export function TodayPage() {
                           role="checkbox"
                           aria-checked={isDone}
                           aria-label={`${h.name}, ${h.frequency}, ${isDone ? "completed" : "not completed"}`}
-                          onClick={() => toggleCheckin(h.id, today)}
+                          disabled={toggleCheckIn.isPending}
+                          onClick={() => handleToggle(h.id)}
                           className={cn(
                             "group flex w-full items-center justify-between rounded-xl p-4 text-left ring-1 transition-all",
                             isDone

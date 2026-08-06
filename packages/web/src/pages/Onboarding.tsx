@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
 import {
-  useApp,
   type AgeRange,
   type EducationLevel,
   type LivingSituation,
@@ -67,7 +66,6 @@ const MOTIVATION_OPTIONS: { value: MotivationDriver; label: string }[] = [
 
 export function Onboarding() {
   const navigate = useNavigate();
-  const { addArea } = useApp();
   const { data: goalCatalog, isLoading: goalsLoading } = useGoals();
   const completeOnboarding = useCompleteOnboarding();
   const goalLabels = goalCatalog?.map((g) => g.label) ?? [];
@@ -168,15 +166,21 @@ export function Onboarding() {
       goals,
       
     });
-    AREA_PRESETS.filter((a) => selectedAreas.includes(a.name)).forEach((a) =>
-       addArea({ name: a.name, color: a.color, description: "" }),
-     );
-     toast.success("Welcome to your garden");
-     navigate("/dashboard");
-   } catch {
-     toast.error("Couldn't save your profile — please try again");
-   }
-  };
+    await Promise.all(
+      AREA_PRESETS.filter((a) => selectedAreas.includes(a.name)).map((a) =>
+        createArea.mutateAsync({
+          name: a.name,
+          color: a.color,
+          description: "",
+        }),
+      ),
+    );
+    toast.success("Welcome to your garden");
+    navigate("/dashboard");
+  } catch {
+    toast.error("Couldn't save your profile — please try again");
+  }
+};
 
   const canNext = () => {
     if (step === 0) return name.trim().length > 0;

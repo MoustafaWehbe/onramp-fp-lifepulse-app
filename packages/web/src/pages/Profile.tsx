@@ -1,7 +1,6 @@
 import { useState, useEffect, type FormEvent, type ReactNode } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import {
-  useApp,
   type Profile as ProfileType,
   type AgeRange,
   type EducationLevel,
@@ -20,10 +19,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ConfirmDialog } from "@/components/confirm-dialog";
 import { PillSelect, TagInput } from "@/components/profile-fields";
 import { toast } from "sonner";
-import { RotateCcw, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import axios from "axios";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -99,7 +97,6 @@ export function ProfilePage() {
 }
 
 function ProfileForm({ initialProfile }: { initialProfile: ProfileType }) {
-  const { reset } = useApp();
   const { user } = useAuth();
   const updateProfile = useUpdateProfile();
   const { data: goalCatalog } = useGoals();
@@ -472,28 +469,7 @@ const save = async (e: FormEvent) => {
               </fieldset>
             </CardContent>
 
-            <CardFooter className="justify-between border-t border-border pt-4">
-              <ConfirmDialog
-                title="Reset all data?"
-                description="This wipes your areas, habits and check-ins, and restores the demo seed data."
-                confirmLabel="Reset everything"
-                destructive
-                onConfirm={() => {
-                  reset();
-                  toast("Data reset to demo seed");
-                }}
-                trigger={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <RotateCcw className="size-3.5" aria-hidden="true" />
-                    Reset all data
-                  </Button>
-                }
-              />
+            <CardFooter className="justify-end border-t border-border pt-4">
               <Button type="submit" disabled={!valid}>
                 Save changes
               </Button>

@@ -3,10 +3,12 @@ import { AppShell, PageHeader } from "@/components/app-shell";
 import { AreaPct } from "@/components/area/area-badge";
 import { cn } from "@/lib/utils";
 import { AreaDot } from "@/components/area/area-dot";
-import { useApp } from "@/lib/store";
+import { daysAgoStr, todayStr } from "@/lib/store";
 import { useAreas } from "@/hooks/useAreas";
+import { useHabits } from "@/hooks/useHabits";
+import { useCheckIns, isChecked } from "@/hooks/useCheckIns";
 import { areaMix, areaTokens } from "@/lib/area-colors";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   LineChart,
   Line,
@@ -19,15 +21,21 @@ import {
 import { Flame, Calendar, Target } from "lucide-react";
 
 export function ProgressPage() {
-  const { habits, checkins } = useApp();
+  const { data: habits = [] } = useHabits();
   const { data: areas = [] } = useAreas();
   const [windowDays, setWindowDays] = useState<7 | 14 | 30>(14);
+
+  const checkInRange = useMemo(
+    () => ({ from: daysAgoStr(364), to: todayStr() }),
+    [],
+  );
+  const { data: checkins = [] } = useCheckIns(checkInRange);
 
   const days = useMemo(() => {
     const arr: { date: string; label: string }[] = [];
     for (let i = windowDays - 1; i >= 0; i--) {
       const d = new Date();
-      d.setDate(d.getDate() - i);
+      d.setUTCDate(d.getUTCDate() - i);
       arr.push({
         date: d.toISOString().slice(0, 10),
         label: d.toLocaleDateString(undefined, {
@@ -49,7 +57,7 @@ export function ProgressPage() {
           return;
         }
         const done = areaHabits.filter((h) =>
-          checkins.some((c) => c.habitId === h.id && c.date === d.date),
+          isChecked(checkins, h.id, d.date),
         ).length;
         row[a.name] = Math.round((done / areaHabits.length) * 100);
       });
@@ -71,7 +79,7 @@ export function ProgressPage() {
   let streak = 0;
   for (let i = 0; i < 365; i++) {
     const d = new Date();
-    d.setDate(d.getDate() - i);
+    d.setUTCDate(d.getUTCDate() - i);
     const ds = d.toISOString().slice(0, 10);
     if (checkins.some((c) => c.date === ds)) streak++;
     else if (i > 0) break;
@@ -230,9 +238,7 @@ export function ProgressPage() {
                         />
                       );
                     const dn = areaHabits.filter((h) =>
-                      checkins.some(
-                        (c) => c.habitId === h.id && c.date === d.date,
-                      ),
+                      isChecked(checkins, h.id, d.date),
                     ).length;
                     const intensity = dn / slot;
                     return (

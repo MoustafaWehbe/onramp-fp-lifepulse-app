@@ -1,4 +1,5 @@
 import { Op } from "sequelize";
+import { todayInTimeZone } from "@starter-kit/shared";
 import { HabitCompletion, Habit } from "../models";
 import { createError } from "../middleware/error-handler";
 import type { CreateCheckInInput } from "../schemas/checkins.schemas";
@@ -20,14 +21,18 @@ function serializeCheckIn(checkIn: HabitCompletion) {
   };
 }
 
-function todayISODate(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function daysAgoISODate(days: number): string {
   const date = new Date();
   date.setUTCDate(date.getUTCDate() - days);
   return date.toISOString().slice(0, 10);
+}
+
+/** A habit's own timezone wins; otherwise fall back to the caller's browser
+ * timezone (sent via the `X-Timezone` header), then UTC. This is what makes
+ * "today" — and therefore when a check-in's tick disappears — match the
+ * user's actual local day instead of the server's UTC day. */
+function effectiveTimezone(habitTimezone: string | null | undefined, clientTimezone?: string): string {
+  return habitTimezone || clientTimezone || "UTC";
 }
 
 export class CheckInsService {
@@ -38,18 +43,20 @@ export class CheckInsService {
     return checkIn;
   }
 
-  private async assertHabitOwnership(userId: string, habitId: string): Promise<void> {
+  private async getOwnedHabit(userId: string, habitId: string): Promise<Habit> {
     const habit = await Habit.findByPk(habitId);
     if (!habit) throw createError("Habit not found", 404);
     if (habit.userId !== userId) throw createError("Forbidden", 403);
+    return habit;
   }
 
-  async list(userId: string, filters: CheckInListFilters) {
+  async list(userId: string, filters: CheckInListFilters, clientTimezone?: string) {
+    const to = filters.to ?? todayInTimeZone(clientTimezone || "UTC");
     const from = filters.from ?? daysAgoISODate(DEFAULT_RANGE_DAYS - 1);
-    const to = filters.to ?? todayISODate();
 
     const where: Record<string, unknown> = {
       userId,
+      completed: true,
       completionDate: { [Op.between]: [from, to] },
     };
     if (filters.habitId) where.habitId = filters.habitId;
@@ -61,43 +68,88 @@ export class CheckInsService {
     return checkIns.map(serializeCheckIn);
   }
 
-  async today(userId: string) {
-    const checkIns = await HabitCompletion.findAll({
-      where: { userId, completionDate: todayISODate() },
+  /**
+   * Completions for "today", where "today" is computed per-habit using that
+   * habit's own timezone (falling back to the caller's timezone, then UTC).
+   * Most users only have one effective timezone across their habits, but
+   * this stays correct even if a habit was explicitly configured otherwise.
+   */
+  async today(userId: string, clientTimezone?: string) {
+    const habits = await Habit.findAll({
+      where: { userId, archivedAt: null },
+      attributes: ["id", "timezone"],
     });
-    return checkIns.map(serializeCheckIn);
+    if (habits.length === 0) return [];
+
+    const todayByHabitId = new Map<string, string>();
+    const candidateDates = new Set<string>();
+    for (const habit of habits) {
+      const today = todayInTimeZone(effectiveTimezone(habit.timezone, clientTimezone));
+      todayByHabitId.set(habit.id, today);
+      candidateDates.add(today);
+    }
+
+    const checkIns = await HabitCompletion.findAll({
+      where: {
+        userId,
+        completed: true,
+        completionDate: { [Op.in]: Array.from(candidateDates) },
+      },
+    });
+
+    return checkIns
+      .filter((c) => todayByHabitId.get(c.habitId) === c.completionDate)
+      .map(serializeCheckIn);
   }
 
   async create(
     userId: string,
     input: CreateCheckInInput,
+    clientTimezone?: string,
   ): Promise<{ checkIn: ReturnType<typeof serializeCheckIn>; created: boolean }> {
-    if (input.date > todayISODate()) {
+    const habit = await this.getOwnedHabit(userId, input.habitId);
+    const today = todayInTimeZone(effectiveTimezone(habit.timezone, clientTimezone));
+    const date = input.date ?? today;
+
+    if (date > today) {
       throw createError("Cannot check in for a future date", 400);
     }
 
-    await this.assertHabitOwnership(userId, input.habitId);
-
-    // Idempotent: a second check-in for the same habit + date just returns the existing row.
+    // Idempotent: ticking an already-ticked day is a no-op. Re-ticking a day
+    // that was previously unticked (completed: false — see remove()) flips
+    // the existing row back on instead of inserting a duplicate, since
+    // (habitId, completionDate) is unique.
     const existing = await HabitCompletion.findOne({
-      where: { habitId: input.habitId, completionDate: input.date },
+      where: { habitId: input.habitId, completionDate: date },
     });
     if (existing) {
-      return { checkIn: serializeCheckIn(existing), created: false };
+      const wasIncomplete = !existing.completed;
+      if (wasIncomplete) {
+        await existing.update({ completed: true });
+      }
+      return { checkIn: serializeCheckIn(existing), created: wasIncomplete };
     }
 
     const checkIn = await HabitCompletion.create({
       habitId: input.habitId,
       userId,
-      completionDate: input.date,
+      completionDate: date,
       completed: true,
     });
     return { checkIn: serializeCheckIn(checkIn), created: true };
   }
 
+  /**
+   * Unticking a habit is a soft toggle (completed: false), not a delete.
+   * The row — and its original createdAt — stays around for history/audit
+   * instead of being destroyed, and the reminder job already treats a
+   * completed:false row the same as "not checked in yet" for that day.
+   */
   async remove(userId: string, id: string): Promise<void> {
     const checkIn = await this.findOwned(userId, id);
-    await checkIn.destroy();
+    if (checkIn.completed) {
+      await checkIn.update({ completed: false });
+    }
   }
 }
 
