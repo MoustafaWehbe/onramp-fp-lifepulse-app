@@ -11,6 +11,8 @@ import {
   type WorkloadIntensity,
   type MotivationDriver,
 } from "@/lib/store";
+import { useGoals } from "@/hooks/useGoals";
+import { useCompleteOnboarding } from "@/hooks/useProfile";
 import { AREA_PRESETS, areaTokens } from "@/lib/area-colors";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,16 +20,6 @@ import { useCreateArea } from "@/hooks/useAreas";
 import { PillSelect, TagInput } from "@/components/profile-fields";
 import { toast } from "sonner";
 
-const GOALS = [
-  "Focus & Clarity",
-  "Physical Vitality",
-  "Career Growth",
-  "Better Sleep",
-  "Stress Reduction",
-  "Creative Mastery",
-  "Stronger Relationships",
-  "Learning",
-];
 
 const AGE_RANGE_OPTIONS: { value: AgeRange; label: string }[] = [
   { value: "18-24", label: "18–24" },
@@ -75,46 +67,41 @@ const MOTIVATION_OPTIONS: { value: MotivationDriver; label: string }[] = [
 
 export function Onboarding() {
   const navigate = useNavigate();
-  const { setProfile } = useApp();
+  const { addArea } = useApp();
+  const { data: goalCatalog, isLoading: goalsLoading } = useGoals();
+  const completeOnboarding = useCompleteOnboarding();
+  const goalLabels = goalCatalog?.map((g) => g.label) ?? [];
   const { user } = useAuth();
   const createArea = useCreateArea();
   const [step, setStep] = useState(0);
 
-  // Step 0 — You
   const [name, setName] = useState(user?.name ?? "");
-  // const [age, setAge] = useState<number | "">("");
-  // const [job, setJob] = useState("");
 
-  // Step 1 — Background
   const [ageRange, setAgeRange] = useState<AgeRange | undefined>();
   const [profession, setProfession] = useState("");
   const [industry, setIndustry] = useState("");
   const [educationLevel, setEducationLevel] = useState<EducationLevel | undefined>();
   const [livingSituation, setLivingSituation] = useState<LivingSituation | undefined>();
 
-  // Step 2 — Goals
   const [goals, setGoals] = useState<string[]>([]);
 
-  // Step 3 — Lifestyle
   const [lifestyleTypes, setLifestyleTypes] = useState<string[]>([]);
   const [dailyFreeTime, setDailyFreeTime] = useState<number | "">("");
   const [energyPattern, setEnergyPattern] = useState<EnergyPattern | undefined>();
   const [workloadIntensity, setWorkloadIntensity] = useState<WorkloadIntensity | undefined>();
 
-  // Step 4 — Wellbeing
   const [stress, setStress] = useState(5);
   const [sleep, setSleep] = useState(7);
   const [stressBaseline, setStressBaseline] = useState<StressBaseline | undefined>();
   const [stressSources, setStressSources] = useState<string[]>([]);
 
-  // Step 5 — Motivation & identity
+
   const [motivationDriver, setMotivationDriver] = useState<MotivationDriver | undefined>();
   const [failureResponse, setFailureResponse] = useState("");
   const [topValues, setTopValues] = useState<string[]>([]);
   const [identityStatements, setIdentityStatements] = useState<string[]>([]);
   const [badHabits, setBadHabits] = useState<string[]>([]);
 
-  // Step 6 — Areas
   const [selectedAreas, setSelectedAreas] = useState<string[]>([
     "Health",
     "Career",
@@ -146,10 +133,7 @@ export function Onboarding() {
     touched && step === 0 && name.trim().length === 0
       ? "Please enter your name."
       : "";
-  // const ageError =
-  //   touched && step === 0 && age !== "" && (age < 13 || age > 120)
-  //     ? "Age must be between 13 and 120."
-  //     : "";
+
   const goalsError =
     touched && step === 2 && goals.length === 0
       ? "Pick at least one goal."
@@ -160,10 +144,9 @@ export function Onboarding() {
       : "";
 
   const finish = async () => {
-    setProfile({
+   try {
+     await completeOnboarding.mutateAsync({
       name: name.trim() || user?.name || "Friend",
-      email: user?.email ?? "you@example.com",
-      // age: typeof age === "number" ? age : undefined,
       ageRange,
       profession: profession.trim() || undefined,
       industry: industry.trim() || undefined,
@@ -183,22 +166,16 @@ export function Onboarding() {
       identityStatements,
       badHabits,
       goals,
-      onboarded: true,
+      
     });
-
-    try {
-      await Promise.all(
-        AREA_PRESETS.filter((a) => selectedAreas.includes(a.name)).map((a) =>
-          createArea.mutateAsync({ name: a.name, color: a.color }),
-        ),
-      );
-      toast.success("Welcome to your garden");
-    } catch {
-      toast.error(
-        "Welcome! Some areas couldn't be created — add them from the dashboard.",
-      );
-    }
-    navigate("/dashboard");
+    AREA_PRESETS.filter((a) => selectedAreas.includes(a.name)).forEach((a) =>
+       addArea({ name: a.name, color: a.color, description: "" }),
+     );
+     toast.success("Welcome to your garden");
+     navigate("/dashboard");
+   } catch {
+     toast.error("Couldn't save your profile — please try again");
+   }
   };
 
   const canNext = () => {
@@ -208,13 +185,13 @@ export function Onboarding() {
     return true;
   };
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setTouched(true);
     if (!canNext()) return;
     setTouched(false);
     if (step < total - 1) setStep((s) => s + 1);
-    else finish();
+    else await finish();
   };
 
   return (
@@ -380,12 +357,15 @@ export function Onboarding() {
               <p className="mt-2 text-muted-foreground">
                 Pick a few. The AI will use these to suggest habits.
               </p>
+             {goalsLoading ? (
+              <p className="mt-8 text-sm text-muted-foreground">Loading goals…</p>
+             ) : (
               <div
                 className="mt-8 grid grid-cols-2 gap-2 md:grid-cols-3"
                 role="group"
                 aria-label="Goals"
               >
-                {GOALS.map((g) => {
+                {goalLabels.map((g) => {
                   const on = goals.includes(g);
                   return (
                     <button
@@ -401,6 +381,7 @@ export function Onboarding() {
                   );
                 })}
               </div>
+              )}
               {goalsError && (
                 <p className="mt-3 text-xs text-destructive" role="alert">
                   {goalsError}
