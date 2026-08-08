@@ -52,9 +52,7 @@ export type MotivationDriver =
   | "financial_freedom"
   | "other";
 
-// Profile now lives server-side (see hooks/useProfile.ts) — this type is
-// kept here since it's the shared shape both the API hooks and any
-// remaining consumers import, but AppState below no longer stores it.
+
 export interface Profile {
   name: string;
   email: string;
