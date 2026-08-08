@@ -6,6 +6,21 @@ export const apiClient = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+// Tells the API the browser's local IANA timezone, so "today" for check-ins
+// and habit reminders can be computed against the user's actual local day
+// instead of the server's UTC day. Habits with their own explicit timezone
+// (set for reminders) still take priority over this on the backend.
+apiClient.interceptors.request.use((config) => {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz) config.headers["X-Timezone"] = tz;
+  } catch {
+    // Intl.DateTimeFormat is universally supported in modern browsers, but
+    // fail open rather than block the request if it's ever unavailable.
+  }
+  return config;
+});
+
 // Refresh the access token cookie on 401, then retry the original request
 apiClient.interceptors.response.use(
   (response) => response,

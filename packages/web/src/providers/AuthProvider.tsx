@@ -1,40 +1,52 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import type { AxiosError } from "axios";
 import { apiClient } from "../lib/api-client";
+import { AuthContext, type AuthUser } from "./auth-context";
 
-interface AuthUser {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-}
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-interface AuthContextValue {
-  user: AuthUser | null;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+// Retries only apply to "couldn't reach the server" failures (no response at
+// all — e.g. ECONNREFUSED while the API dev server is mid-restart). A real
+// 401/403 response means the cookie genuinely isn't valid, so that's trusted
+// immediately without retrying.
+const RETRY_DELAYS_MS = [300, 800, 1500];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restore session on mount — access token cookie is sent automatically
+  // Restore session on mount — access token cookie is sent automatically.
+  // Tolerates brief backend unavailability (dev server restarts, network
+  // blips) instead of bouncing a genuinely logged-in user to /login just
+  // because one request landed in a bad window.
   useEffect(() => {
-    apiClient
-      .get<{ data: AuthUser }>("/auth/me")
-      .then(({ data }) => setUser(data.data))
-      .catch(() => setUser(null))
-      .finally(() => setIsLoading(false));
+    let cancelled = false;
+
+    async function restoreSession() {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const { data } = await apiClient.get<{ data: AuthUser }>("/auth/me");
+          if (!cancelled) setUser(data.data);
+          return;
+        } catch (err) {
+          const hasResponse = Boolean((err as AxiosError).response);
+          const canRetry = !hasResponse && attempt < RETRY_DELAYS_MS.length;
+          if (!canRetry) {
+            if (!cancelled) setUser(null);
+            return;
+          }
+          await sleep(RETRY_DELAYS_MS[attempt]);
+        }
+      }
+    }
+
+    restoreSession().finally(() => {
+      if (!cancelled) setIsLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function login(email: string, password: string): Promise<void> {
@@ -65,11 +77,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuthContext(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx)
-    throw new Error("useAuthContext must be used within <AuthProvider>");
-  return ctx;
 }

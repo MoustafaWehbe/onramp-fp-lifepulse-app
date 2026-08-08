@@ -10,14 +10,35 @@ export interface HabitAttributes {
   durationMinutes?: number;
   difficulty?: HabitDifficulty;
   notes?: string;
-  archivedAt?: Date;
+  /** 24-hour "HH:mm:ss" local time (interpreted in `timezone`) to send a reminder. */
+  reminderTime?: string;
+  /** Whether a reminder should be scheduled for this habit. Requires reminderTime + timezone. */
+  reminderEnabled: boolean;
+  /** IANA timezone (e.g. "America/New_York") the reminderTime is expressed in. */
+  timezone?: string;
+  /**
+   * Explicit weekdays (0=Sun..6=Sat) this habit runs on. Only meaningful for
+   * "3x" / "5x" / "weekly" frequencies, which are otherwise ambiguous about
+   * *which* days — "daily" and "weekdays" already imply their own days.
+   * Null/undefined means unspecified (reminder fires every day instead).
+   */
+  daysOfWeek?: number[] | null;
+  archivedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export interface HabitCreationAttributes extends Optional<
   HabitAttributes,
-  "id" | "durationMinutes" | "difficulty" | "notes" | "archivedAt"
+  | "id"
+  | "durationMinutes"
+  | "difficulty"
+  | "notes"
+  | "reminderTime"
+  | "reminderEnabled"
+  | "timezone"
+  | "daysOfWeek"
+  | "archivedAt"
 > {}
 
 export class Habit
@@ -32,7 +53,11 @@ export class Habit
   declare durationMinutes: number | undefined;
   declare difficulty: HabitDifficulty | undefined;
   declare notes: string | undefined;
-  declare archivedAt: Date | undefined;
+  declare reminderTime: string | undefined;
+  declare reminderEnabled: boolean;
+  declare timezone: string | undefined;
+  declare daysOfWeek: number[] | null | undefined;
+  declare archivedAt: Date | null | undefined;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
 
@@ -67,6 +92,17 @@ export class Habit
           allowNull: true,
         },
         notes: { type: DataTypes.TEXT, allowNull: true },
+        reminderTime: { type: DataTypes.TIME, allowNull: true },
+        reminderEnabled: {
+          type: DataTypes.BOOLEAN,
+          defaultValue: false,
+          allowNull: false,
+        },
+        timezone: { type: DataTypes.STRING(64), allowNull: true },
+        daysOfWeek: {
+          type: DataTypes.ARRAY(DataTypes.INTEGER),
+          allowNull: true,
+        },
         archivedAt: { type: DataTypes.DATE, allowNull: true },
       },
       {

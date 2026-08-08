@@ -2,6 +2,7 @@ import { Worker } from "bullmq";
 import { getRedisConnection, QUEUE_NAMES } from "@starter-kit/shared";
 import { processEmailJob } from "../jobs/email.job";
 import { processEmbeddingsJob } from "../jobs/embeddings.job";
+import { processReminderJob } from "../jobs/reminders.job";
 
 export function createWorkers(): Worker[] {
   const connection = getRedisConnection();
@@ -20,7 +21,12 @@ export function createWorkers(): Worker[] {
     },
   );
 
-  const workers = [emailWorker, embeddingsWorker];
+  const remindersWorker = new Worker(QUEUE_NAMES.REMINDERS, processReminderJob, {
+    connection,
+    concurrency: 5,
+  });
+
+  const workers = [emailWorker, embeddingsWorker, remindersWorker];
 
   workers.forEach((worker) => {
     worker.on("completed", (job) => {

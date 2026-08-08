@@ -31,6 +31,10 @@
   --color-area-social: var(--area-social);
   --color-area-learning: var(--area-learning);
   --color-area-creative: var(--area-creative);
+  --color-area-finance: var(--area-finance);
+  --color-area-family: var(--area-family);
+  --color-area-adventure: var(--area-adventure);
+  --color-area-rest: var(--area-rest);
 
   --grid-template-columns-14: repeat(14, minmax(0, 1fr));
 
@@ -86,6 +90,10 @@
   --area-social: oklch(0.76 0.14 60);
   --area-learning: oklch(0.74 0.13 35);
   --area-creative: oklch(0.74 0.14 335);
+  --area-finance: oklch(0.74 0.14 90);
+  --area-family: oklch(0.70 0.16 5);
+  --area-adventure: oklch(0.72 0.12 200);
+  --area-rest: oklch(0.70 0.13 265);
 }
 
 .dark {
@@ -130,6 +138,10 @@
   --area-social: oklch(0.68 0.14 60);
   --area-learning: oklch(0.66 0.13 35);
   --area-creative: oklch(0.66 0.14 335);
+  --area-finance: oklch(0.66 0.14 90);
+  --area-family: oklch(0.62 0.16 5);
+  --area-adventure: oklch(0.64 0.12 200);
+  --area-rest: oklch(0.62 0.13 265);
 }
 
 @utility mono {

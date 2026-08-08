@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
 import {
-  useApp,
   type AgeRange,
   type EducationLevel,
   type LivingSituation,
@@ -17,6 +16,7 @@ import { useCreateArea } from "@/hooks/useAreas";
 import { AREA_PRESETS, areaTokens } from "@/lib/area-colors";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useCreateArea } from "@/hooks/useAreas";
 import { PillSelect, TagInput } from "@/components/profile-fields";
 import { toast } from "sonner";
 
@@ -72,6 +72,7 @@ export function Onboarding() {
   const completeOnboarding = useCompleteOnboarding();
   const goalLabels = goalCatalog?.map((g) => g.label) ?? [];
   const { user } = useAuth();
+  const createArea = useCreateArea();
   const [step, setStep] = useState(0);
 
   const [name, setName] = useState(user?.name ?? "");

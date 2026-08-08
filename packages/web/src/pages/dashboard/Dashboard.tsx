@@ -1,11 +1,14 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Plus, Flame, TrendingUp, ArrowRight } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { AppShell, PageHeader, AiPanel } from "@/components/app-shell";
 import { AreaBadge, AreaPct } from "@/components/area/area-badge";
 import { AreaDot } from "@/components/area/area-dot";
 import { AreaProgress } from "@/components/area/area-progress";
-import { useApp, todayStr } from "@/lib/store";
+import { todayStr, daysAgoStr } from "@/lib/store";
+import { useAreas, useCreateArea } from "@/hooks/useAreas";
+import { useHabits } from "@/hooks/useHabits";
+import { useCheckIns, useTodayCheckIns, isChecked } from "@/hooks/useCheckIns";
 import { AREA_COLORS, areaTokens, type AreaColor } from "@/lib/area-colors";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -14,8 +17,18 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 
 export function Dashboard() {
-  const { areas, habits, checkins, addArea } = useApp();
-  const today = todayStr();
+  const { data: habits = [] } = useHabits();
+  // "Today" stats come from the tz-aware /check-ins/today endpoint. The
+  // historical range below is only used for the streak calculation, where
+  // day-boundary precision matters far less than for "is it done today".
+  const { data: todayCheckins = [] } = useTodayCheckIns();
+  const checkInRange = useMemo(
+    () => ({ from: daysAgoStr(364), to: todayStr() }),
+    [],
+  );
+  const { data: checkins = [] } = useCheckIns(checkInRange);
+  const { data: areas = [], isLoading: areasLoading } = useAreas();
+  const createArea = useCreateArea();
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState<AreaColor>("health");
@@ -29,7 +42,7 @@ export function Dashboard() {
   let streak = 0;
   for (let i = 0; i < 365; i++) {
     const d = new Date();
-    d.setDate(d.getDate() - i);
+    d.setUTCDate(d.getUTCDate() - i);
     const ds = d.toISOString().slice(0, 10);
     if (checkins.some((c) => c.date === ds)) streak++;
     else if (i > 0) break;
@@ -37,7 +50,7 @@ export function Dashboard() {
 
   const totalToday = habits.length;
   const doneToday = habits.filter((h) =>
-    checkins.some((c) => c.habitId === h.id && c.date === today),
+    isChecked(todayCheckins, h.id),
   ).length;
   const overallPct = totalToday
     ? Math.round((doneToday / totalToday) * 100)
@@ -45,12 +58,21 @@ export function Dashboard() {
 
   const create = (e: FormEvent) => {
     e.preventDefault();
-    if (!newName.trim()) return;
-    addArea({ name: newName.trim(), color: newColor });
     const created = newName.trim();
-    setNewName("");
-    setShowNew(false);
-    toast.success(`Area "${created}" created`);
+    if (!created) return;
+    createArea.mutate(
+      { name: created, color: newColor },
+      {
+        onSuccess: () => {
+          setNewName("");
+          setShowNew(false);
+          toast.success(`Area "${created}" created`);
+        },
+        onError: () => {
+          toast.error("Couldn't create the area. Please try again.");
+        },
+      },
+    );
   };
 
   return (
@@ -149,8 +171,11 @@ export function Dashboard() {
                     ))}
                   </div>
                 </fieldset>
-                <Button type="submit" disabled={!newName.trim()}>
-                  Create
+                <Button
+                  type="submit"
+                  disabled={!newName.trim() || createArea.isPending}
+                >
+                  {createArea.isPending ? "Creating…" : "Create"}
                 </Button>
               </div>
             </form>
@@ -158,46 +183,54 @@ export function Dashboard() {
         )}
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {areas.map((area) => {
-            const t = areaTokens[area.color];
-            const areaHabits = habits.filter((h) => h.areaId === area.id);
-            const areaDone = areaHabits.filter((h) =>
-              checkins.some((c) => c.habitId === h.id && c.date === today),
-            ).length;
-            const pct = areaHabits.length
-              ? Math.round((areaDone / areaHabits.length) * 100)
-              : 0;
-            return (
-              <Link
-                key={area.id}
-                to={`/areas/${area.id}`}
-                className={cn(
-                  "block rounded-2xl bg-card p-6 ring-1 ring-black/5 transition-all duration-200",
-                  t.hoverCardRing,
-                  t.hoverCardBg,
-                )}
-              >
-                <div className="mb-8 flex items-center justify-between">
-                  <AreaBadge color={area.color}>{area.name}</AreaBadge>
-                  <AreaPct value={pct} color={area.color} />
-                </div>
-                <h3 className="text-lg font-bold">
-                  {areaHabits.length} habit
-                  {areaHabits.length === 1 ? "" : "s"}
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {areaDone} of {areaHabits.length} done today
-                </p>
-                <AreaProgress
-                  value={pct}
-                  color={area.color}
-                  className="mt-6 h-1"
-                  aria-label={`${area.name} today progress`}
-                />
-              </Link>
-            );
-          })}
-          {areas.length === 0 && (
+          {areasLoading && (
+            <div className="col-span-full rounded-2xl border border-dashed border-border bg-surface p-10 text-center">
+              <p className="text-sm text-muted-foreground">
+                Loading life areas…
+              </p>
+            </div>
+          )}
+          {!areasLoading &&
+            areas.map((area) => {
+              const t = areaTokens[area.color];
+              const areaHabits = habits.filter((h) => h.areaId === area.id);
+              const areaDone = areaHabits.filter((h) =>
+                isChecked(todayCheckins, h.id),
+              ).length;
+              const pct = areaHabits.length
+                ? Math.round((areaDone / areaHabits.length) * 100)
+                : 0;
+              return (
+                <Link
+                  key={area.id}
+                  to={`/areas/${area.id}`}
+                  className={cn(
+                    "block rounded-2xl bg-card p-6 ring-1 ring-black/5 transition-all duration-200",
+                    t.hoverCardRing,
+                    t.hoverCardBg,
+                  )}
+                >
+                  <div className="mb-8 flex items-center justify-between">
+                    <AreaBadge color={area.color}>{area.name}</AreaBadge>
+                    <AreaPct value={pct} color={area.color} />
+                  </div>
+                  <h3 className="text-lg font-bold">
+                    {areaHabits.length} habit
+                    {areaHabits.length === 1 ? "" : "s"}
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {areaDone} of {areaHabits.length} done today
+                  </p>
+                  <AreaProgress
+                    value={pct}
+                    color={area.color}
+                    className="mt-6 h-1"
+                    aria-label={`${area.name} today progress`}
+                  />
+                </Link>
+              );
+            })}
+          {!areasLoading && areas.length === 0 && (
             <div className="col-span-full rounded-2xl border border-dashed border-border bg-surface p-10 text-center">
               <p className="text-sm text-muted-foreground">
                 No life areas yet. Create one to start cultivating.
@@ -225,9 +258,7 @@ export function Dashboard() {
                   </div>
                   <div className="space-y-1">
                     {areaHabits.slice(0, 3).map((h) => {
-                      const done = checkins.some(
-                        (c) => c.habitId === h.id && c.date === today,
-                      );
+                      const done = isChecked(todayCheckins, h.id);
                       return (
                         <Card
                           key={h.id}

@@ -8,7 +8,7 @@ info:
 
     **Auth:** HttpOnly cookies (`accessToken`, `refreshToken`). Use `credentials: "include"` on all requests.
 
-    **Status:** Auth, Profile, Goals, and Life Areas are implemented. Habits and Check-ins are documented for team review — not yet implemented on the server.
+    **Status:** Auth, Profile, Goals, Life Areas, Habits, and Check-ins are implemented.
 
 servers:
   - url: /api
@@ -35,6 +35,20 @@ components:
       in: cookie
       name: accessToken
       description: HttpOnly access token cookie set on login
+
+  parameters:
+    XTimezone:
+      name: X-Timezone
+      in: header
+      required: false
+      schema:
+        type: string
+        example: "America/New_York"
+      description: >-
+        Caller's IANA timezone (e.g. from Intl.DateTimeFormat().resolvedOptions().timeZone
+        in a browser). Used as a fallback "today" boundary for habits that
+        don't have their own timezone set; a habit's own timezone always
+        wins. Falls back to UTC if omitted entirely.
 
   schemas:
     RegisterBody:
@@ -273,7 +287,19 @@ components:
 
     AreaColor:
       type: string
-      enum: [health, career, spirit, social, learning, creative]
+      enum:
+        [
+          health,
+          career,
+          spirit,
+          social,
+          learning,
+          creative,
+          finance,
+          family,
+          adventure,
+          rest,
+        ]
 
     LifeArea:
       type: object
@@ -356,6 +382,10 @@ components:
       type: string
       enum: [daily, weekdays, 3x, 5x, weekly]
 
+    Difficulty:
+      type: string
+      enum: [easy, medium, hard]
+
     Habit:
       type: object
       properties:
@@ -370,9 +400,49 @@ components:
           maxLength: 100
         frequency:
           $ref: "#/components/schemas/Frequency"
+        durationMinutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+          nullable: true
+        difficulty:
+          allOf:
+            - $ref: "#/components/schemas/Difficulty"
+          nullable: true
         notes:
           type: string
           maxLength: 500
+          nullable: true
+        reminderEnabled:
+          type: boolean
+          description: Whether a reminder is scheduled for this habit.
+        reminderTime:
+          type: string
+          pattern: "^([01]\\d|2[0-3]):[0-5]\\d$"
+          example: "07:30"
+          nullable: true
+          description: 24-hour local time the reminder fires at. Required when reminderEnabled is true.
+        timezone:
+          type: string
+          example: "America/New_York"
+          nullable: true
+          description: IANA timezone reminderTime is expressed in. Required when reminderEnabled is true.
+        daysOfWeek:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+          nullable: true
+          example: [1, 3, 5]
+          description: >-
+            Explicit weekdays (0=Sun..6=Sat) this habit runs on. Only
+            meaningful for "3x"/"5x"/"weekly" frequencies — "daily" and
+            "weekdays" already imply their own days. Null means unspecified,
+            in which case reminders fire every day instead.
+        archivedAt:
+          type: string
+          format: date-time
           nullable: true
         createdAt:
           type: string
@@ -394,9 +464,37 @@ components:
           maxLength: 100
         frequency:
           $ref: "#/components/schemas/Frequency"
+        durationMinutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+        difficulty:
+          $ref: "#/components/schemas/Difficulty"
         notes:
           type: string
           maxLength: 500
+        reminderEnabled:
+          type: boolean
+          default: false
+        reminderTime:
+          type: string
+          pattern: "^([01]\\d|2[0-3]):[0-5]\\d$"
+          example: "07:30"
+          description: Required when reminderEnabled is true.
+        timezone:
+          type: string
+          example: "America/New_York"
+          description: Required when reminderEnabled is true.
+        daysOfWeek:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+          example: [1, 3, 5]
+          description: >-
+            Explicit weekdays (0=Sun..6=Sat) for "3x"/"5x"/"weekly"
+            frequencies. Omit to fall back to firing reminders every day.
 
     UpdateHabitBody:
       type: object
@@ -410,10 +508,38 @@ components:
           maxLength: 100
         frequency:
           $ref: "#/components/schemas/Frequency"
+        durationMinutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+          nullable: true
+        difficulty:
+          allOf:
+            - $ref: "#/components/schemas/Difficulty"
+          nullable: true
         notes:
           type: string
           maxLength: 500
           nullable: true
+        reminderEnabled:
+          type: boolean
+        reminderTime:
+          type: string
+          pattern: "^([01]\\d|2[0-3]):[0-5]\\d$"
+          example: "07:30"
+          nullable: true
+        timezone:
+          type: string
+          example: "America/New_York"
+          nullable: true
+        daysOfWeek:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+          nullable: true
+          example: [1, 3, 5]
 
     CheckIn:
       type: object
@@ -434,7 +560,7 @@ components:
 
     CreateCheckInBody:
       type: object
-      required: [habitId, date]
+      required: [habitId]
       properties:
         habitId:
           type: string
@@ -442,7 +568,11 @@ components:
         date:
           type: string
           format: date
-          description: Cannot be a future date
+          description: >-
+            Optional. Defaults to "today" in the habit's own timezone
+            (falling back to the X-Timezone header, then UTC). Only pass an
+            explicit date when backfilling a past day — future dates are
+            rejected.
 
     ErrorResponse:
       type: object
@@ -940,6 +1070,13 @@ paths:
             type: string
             format: uuid
           description: Filter by life area
+        - name: includeArchived
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["true", "false"]
+          description: Include archived habits. Defaults to false.
       responses:
         "200":
           description: List of habits
@@ -1139,6 +1276,94 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /habits/{id}/archive:
+    post:
+      tags: [Habits]
+      summary: Archive a habit
+      description: Soft-deletes the habit (hidden from default lists, check-in history preserved) and cancels its reminder.
+      operationId: archiveHabit
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Archived habit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Habit"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Habit not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /habits/{id}/restore:
+    post:
+      tags: [Habits]
+      summary: Restore an archived habit
+      description: Un-archives the habit and re-schedules its reminder if reminderEnabled is true.
+      operationId: restoreHabit
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Restored habit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Habit"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Habit not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /check-ins:
     get:
       tags: [Check-ins]
@@ -1148,6 +1373,7 @@ paths:
       security:
         - cookieAuth: []
       parameters:
+        - $ref: "#/components/parameters/XTimezone"
         - name: from
           in: query
           required: false
@@ -1201,6 +1427,8 @@ paths:
       description: Idempotent — returns 200 if check-in already exists for habitId + date.
       security:
         - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XTimezone"
       requestBody:
         required: true
         content:
@@ -1262,8 +1490,13 @@ paths:
       tags: [Check-ins]
       summary: Get today's check-ins
       operationId: getTodayCheckIns
+      description: >-
+        "Today" is computed per-habit using that habit's own timezone
+        (falling back to the X-Timezone header, then UTC).
       security:
         - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XTimezone"
       responses:
         "200":
           description: Today's check-ins
@@ -1286,8 +1519,13 @@ paths:
   /check-ins/{id}:
     delete:
       tags: [Check-ins]
-      summary: Delete a check-in
+      summary: Un-complete a check-in
       operationId: deleteCheckIn
+      description: >-
+        Soft toggle, not a hard delete — marks the check-in as not completed
+        while keeping the row (and its original createdAt) for history.
+        Re-completing the same habit + date later flips it back on rather
+        than creating a duplicate.
       security:
         - cookieAuth: []
       parameters:
@@ -1299,7 +1537,7 @@ paths:
             format: uuid
       responses:
         "204":
-          description: Deleted
+          description: Un-completed
         "401":
           description: Unauthorized
           content:

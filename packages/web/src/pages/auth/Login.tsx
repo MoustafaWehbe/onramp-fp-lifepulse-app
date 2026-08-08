@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "../../hooks/useAuth";
-import { useApp } from "@/lib/store";
 import { ArrowRight } from "lucide-react";
 
 const loginSchema = z.object({
@@ -16,7 +15,6 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function Login() {
   const { login } = useAuth();
-  const { setProfile } = useApp();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +30,6 @@ export function Login() {
     try {
       setError(null);
       await login(data.email, data.password);
-      setProfile({ email: data.email });
       navigate("/dashboard");
     } catch {
       setError("Invalid email or password");
