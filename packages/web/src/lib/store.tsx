@@ -22,8 +22,7 @@ export type MotivationDriver =
   | "financial_freedom"
   | "other";
 
-// Profile lives server-side (see hooks/useProfile.ts). This type is the shared
-// shape both the API hooks and form consumers import.
+
 export interface Profile {
   name: string;
   email: string;
