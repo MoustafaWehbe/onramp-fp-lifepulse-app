@@ -1,6 +1,13 @@
 import type { Request, Response, NextFunction } from "express";
 import { checkInsService } from "../services/checkins.service";
 
+/** Browser-resolved IANA timezone sent by the frontend, used as a fallback
+ * "today" boundary for habits that don't have their own timezone set. */
+function clientTimezone(req: Request): string | undefined {
+  const header = req.get("x-timezone");
+  return header && header.trim() ? header.trim() : undefined;
+}
+
 export const checkInsController = {
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -9,7 +16,11 @@ export const checkInsController = {
         to?: string;
         habitId?: string;
       };
-      const checkIns = await checkInsService.list(req.user!.userId, { from, to, habitId });
+      const checkIns = await checkInsService.list(
+        req.user!.userId,
+        { from, to, habitId },
+        clientTimezone(req),
+      );
       res.json({ data: checkIns });
     } catch (err) {
       next(err);
@@ -18,7 +29,7 @@ export const checkInsController = {
 
   async today(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const checkIns = await checkInsService.today(req.user!.userId);
+      const checkIns = await checkInsService.today(req.user!.userId, clientTimezone(req));
       res.json({ data: checkIns });
     } catch (err) {
       next(err);
@@ -27,7 +38,11 @@ export const checkInsController = {
 
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { checkIn, created } = await checkInsService.create(req.user!.userId, req.body);
+      const { checkIn, created } = await checkInsService.create(
+        req.user!.userId,
+        req.body,
+        clientTimezone(req),
+      );
       res.status(created ? 201 : 200).json({ data: checkIn });
     } catch (err) {
       next(err);

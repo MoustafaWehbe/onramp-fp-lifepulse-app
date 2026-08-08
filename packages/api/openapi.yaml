@@ -36,6 +36,20 @@ components:
       name: accessToken
       description: HttpOnly access token cookie set on login
 
+  parameters:
+    XTimezone:
+      name: X-Timezone
+      in: header
+      required: false
+      schema:
+        type: string
+        example: "America/New_York"
+      description: >-
+        Caller's IANA timezone (e.g. from Intl.DateTimeFormat().resolvedOptions().timeZone
+        in a browser). Used as a fallback "today" boundary for habits that
+        don't have their own timezone set; a habit's own timezone always
+        wins. Falls back to UTC if omitted entirely.
+
   schemas:
     RegisterBody:
       type: object
@@ -413,6 +427,19 @@ components:
           example: "America/New_York"
           nullable: true
           description: IANA timezone reminderTime is expressed in. Required when reminderEnabled is true.
+        daysOfWeek:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+          nullable: true
+          example: [1, 3, 5]
+          description: >-
+            Explicit weekdays (0=Sun..6=Sat) this habit runs on. Only
+            meaningful for "3x"/"5x"/"weekly" frequencies — "daily" and
+            "weekdays" already imply their own days. Null means unspecified,
+            in which case reminders fire every day instead.
         archivedAt:
           type: string
           format: date-time
@@ -458,6 +485,16 @@ components:
           type: string
           example: "America/New_York"
           description: Required when reminderEnabled is true.
+        daysOfWeek:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+          example: [1, 3, 5]
+          description: >-
+            Explicit weekdays (0=Sun..6=Sat) for "3x"/"5x"/"weekly"
+            frequencies. Omit to fall back to firing reminders every day.
 
     UpdateHabitBody:
       type: object
@@ -495,6 +532,14 @@ components:
           type: string
           example: "America/New_York"
           nullable: true
+        daysOfWeek:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+          nullable: true
+          example: [1, 3, 5]
 
     CheckIn:
       type: object
@@ -515,7 +560,7 @@ components:
 
     CreateCheckInBody:
       type: object
-      required: [habitId, date]
+      required: [habitId]
       properties:
         habitId:
           type: string
@@ -523,7 +568,11 @@ components:
         date:
           type: string
           format: date
-          description: Cannot be a future date
+          description: >-
+            Optional. Defaults to "today" in the habit's own timezone
+            (falling back to the X-Timezone header, then UTC). Only pass an
+            explicit date when backfilling a past day — future dates are
+            rejected.
 
     ErrorResponse:
       type: object
@@ -1324,6 +1373,7 @@ paths:
       security:
         - cookieAuth: []
       parameters:
+        - $ref: "#/components/parameters/XTimezone"
         - name: from
           in: query
           required: false
@@ -1377,6 +1427,8 @@ paths:
       description: Idempotent — returns 200 if check-in already exists for habitId + date.
       security:
         - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XTimezone"
       requestBody:
         required: true
         content:
@@ -1438,8 +1490,13 @@ paths:
       tags: [Check-ins]
       summary: Get today's check-ins
       operationId: getTodayCheckIns
+      description: >-
+        "Today" is computed per-habit using that habit's own timezone
+        (falling back to the X-Timezone header, then UTC).
       security:
         - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XTimezone"
       responses:
         "200":
           description: Today's check-ins
@@ -1462,8 +1519,13 @@ paths:
   /check-ins/{id}:
     delete:
       tags: [Check-ins]
-      summary: Delete a check-in
+      summary: Un-complete a check-in
       operationId: deleteCheckIn
+      description: >-
+        Soft toggle, not a hard delete — marks the check-in as not completed
+        while keeping the row (and its original createdAt) for history.
+        Re-completing the same habit + date later flips it back on rather
+        than creating a duplicate.
       security:
         - cookieAuth: []
       parameters:
@@ -1475,7 +1537,7 @@ paths:
             format: uuid
       responses:
         "204":
-          description: Deleted
+          description: Un-completed
         "401":
           description: Unauthorized
           content:

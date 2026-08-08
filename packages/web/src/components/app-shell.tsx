@@ -5,11 +5,10 @@ import {
   BarChart3,
   User,
   Sparkles,
-  Loader2,
   LogOut,
 } from "lucide-react";
-import { useApp } from "@/lib/store";
 import { useProfile } from "@/hooks/useProfile";
+import { useAreas } from "@/hooks/useAreas";
 import { areaTokens } from "@/lib/area-colors";
 import { AreaDot } from "@/components/area/area-dot";
 import { cn } from "@/lib/utils";
@@ -25,30 +24,12 @@ const nav = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const { areas, hydrated } = useApp();
+  const { data: areas = [] } = useAreas();
   const { user, logout } = useAuth();
   const { data: liveProfile } = useProfile();
-  
 
   const displayName = user?.name ?? liveProfile?.name;
   const displayJob = liveProfile?.profession;
-
-  if (!hydrated) {
-    return (
-      <div
-        className="grid min-h-screen place-items-center bg-surface"
-        role="status"
-        aria-live="polite"
-      >
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          <span className="mono text-xs uppercase tracking-widest">
-            Loading your garden…
-          </span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-surface">

@@ -11,8 +11,8 @@
 | Profile | 3 | Yes |
 | Goals | 1 | Yes |
 | Life Areas | 5 | Yes |
-| Habits | 5 | No |
-| Check-ins | 4 | No |
+| Habits | 5 | Yes |
+| Check-ins | 4 | Yes |
 | Health | 1 (`GET /health`) | Yes |
 
 **22 API endpoints** under `/api` + 1 health check.
@@ -27,6 +27,7 @@
 - **Error:** `{ "error": "message" }`
 - **Validation (422):** `{ "error": "Validation failed", "errors": [{ "field", "message" }] }`
 - **IDs:** UUID v4 · **Dates:** ISO 8601
+- **Timezone:** send `X-Timezone` (IANA, e.g. `America/New_York`) on check-in requests — used as the "today" boundary fallback when a habit has no explicit timezone of its own. Omitting it falls back to UTC.
 
 ---
 
@@ -88,8 +89,11 @@ type AreaColor = "health" | "career" | "spirit" | "social" | "learning" | "creat
 type Frequency = "daily" | "weekdays" | "3x" | "5x" | "weekly"
 
 interface LifeArea { id, name, color: AreaColor, description? }
-interface Habit { id, areaId, name, frequency: Frequency, notes? }
-interface CheckIn { id, habitId, date: "YYYY-MM-DD" }
+interface Habit { id, areaId, name, frequency: Frequency, durationMinutes?, notes?, reminderEnabled, reminderTime?, timezone?, daysOfWeek?: number[] /* 0=Sun..6=Sat, for 3x/5x/weekly */ }
+// durationMinutes: how long the habit takes to do (display-only, e.g. "15 min" clock icon).
+// reminderEnabled/reminderTime/timezone: opt-in notification pipeline for live-testing the
+// worker (BullMQ) — unrelated to durationMinutes, shown with a bell icon.
+interface CheckIn { id, habitId, date: "YYYY-MM-DD" } // DELETE soft-toggles (completed: false), doesn't destroy the row
 interface Profile { name, email, ageRange?, profession?, industry?, educationLevel?, livingSituation?, lifestyleTypes[], stressSources[], dailyFreeTime?, energyPattern?, stressBaseline?, workloadIntensity?, motivationDriver?, failureResponse?, topValues[], identityStatements[], badHabits[], goals[], stressLevel?, sleepHours?, onboarded }
 ```
 

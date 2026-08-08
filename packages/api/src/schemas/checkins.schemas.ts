@@ -17,7 +17,10 @@ export const listCheckInsQuerySchema = z
 
 export const createCheckInSchema = z.object({
   habitId: z.string().uuid("Invalid habit id"),
-  date: isoDateSchema,
+  // Optional — defaults server-side to "today" in the habit's own timezone
+  // (falling back to the caller's timezone, then UTC). Only pass an explicit
+  // date when backfilling a past day; future dates are rejected.
+  date: isoDateSchema.optional(),
 });
 
 export const checkInIdParamSchema = z.object({

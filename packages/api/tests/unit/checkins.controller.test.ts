@@ -54,11 +54,26 @@ describe("GET /api/check-ins", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);
-    expect(mockCheckInsService.list).toHaveBeenCalledWith(USER_ID, {
-      from: undefined,
-      to: undefined,
-      habitId: undefined,
-    });
+    expect(mockCheckInsService.list).toHaveBeenCalledWith(
+      USER_ID,
+      { from: undefined, to: undefined, habitId: undefined },
+      undefined,
+    );
+  });
+
+  it("forwards the X-Timezone header to the service", async () => {
+    mockCheckInsService.list.mockResolvedValue([sampleCheckIn]);
+
+    await request(app)
+      .get("/api/check-ins")
+      .set("Cookie", authCookie)
+      .set("X-Timezone", "America/New_York");
+
+    expect(mockCheckInsService.list).toHaveBeenCalledWith(
+      USER_ID,
+      { from: undefined, to: undefined, habitId: undefined },
+      "America/New_York",
+    );
   });
 
   it("returns 422 when from is after to", async () => {
@@ -87,7 +102,7 @@ describe("GET /api/check-ins/today", () => {
     const res = await request(app).get("/api/check-ins/today").set("Cookie", authCookie);
 
     expect(res.status).toBe(200);
-    expect(mockCheckInsService.today).toHaveBeenCalledWith(USER_ID);
+    expect(mockCheckInsService.today).toHaveBeenCalledWith(USER_ID, undefined);
   });
 });
 
@@ -103,10 +118,27 @@ describe("POST /api/check-ins", () => {
       .send({ habitId: HABIT_ID, date: "2026-06-26" });
 
     expect(res.status).toBe(201);
-    expect(mockCheckInsService.create).toHaveBeenCalledWith(USER_ID, {
-      habitId: HABIT_ID,
-      date: "2026-06-26",
-    });
+    expect(mockCheckInsService.create).toHaveBeenCalledWith(
+      USER_ID,
+      { habitId: HABIT_ID, date: "2026-06-26" },
+      undefined,
+    );
+  });
+
+  it("defaults the date server-side when omitted from the body", async () => {
+    mockCheckInsService.create.mockResolvedValue({ checkIn: sampleCheckIn, created: true });
+
+    const res = await request(app)
+      .post("/api/check-ins")
+      .set("Cookie", authCookie)
+      .send({ habitId: HABIT_ID });
+
+    expect(res.status).toBe(201);
+    expect(mockCheckInsService.create).toHaveBeenCalledWith(
+      USER_ID,
+      { habitId: HABIT_ID },
+      undefined,
+    );
   });
 
   it("returns 200 (idempotent) when the check-in already existed", async () => {
