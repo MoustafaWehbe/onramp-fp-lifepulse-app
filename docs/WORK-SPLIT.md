@@ -38,7 +38,7 @@ frontend wiring). The work is sized to be roughly equal.
 Backend
 - Migrations + models: `user_profiles` (1:1 with `users`), `goals`, `user_goals`.
 - Seed the `goals` catalog (the list from Onboarding/Profile).
-- Endpoints: `GET /api/profile`, `PUT /api/profile`, onboarding submit, and a
+- Endpoints: `GET /api/profile`, `PATCH /api/profile`, onboarding submit, and a
   `GET /api/goals` list.
 
 Frontend

@@ -12,6 +12,7 @@ import {
 } from "@/lib/store";
 import { useGoals } from "@/hooks/useGoals";
 import { useCompleteOnboarding } from "@/hooks/useProfile";
+import { useCreateArea } from "@/hooks/useAreas";
 import { AREA_PRESETS, areaTokens } from "@/lib/area-colors";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -66,6 +67,7 @@ const MOTIVATION_OPTIONS: { value: MotivationDriver; label: string }[] = [
 
 export function Onboarding() {
   const navigate = useNavigate();
+  const createArea = useCreateArea();
   const { data: goalCatalog, isLoading: goalsLoading } = useGoals();
   const completeOnboarding = useCompleteOnboarding();
   const goalLabels = goalCatalog?.map((g) => g.label) ?? [];
@@ -168,19 +170,15 @@ export function Onboarding() {
     });
     await Promise.all(
       AREA_PRESETS.filter((a) => selectedAreas.includes(a.name)).map((a) =>
-        createArea.mutateAsync({
-          name: a.name,
-          color: a.color,
-          description: "",
-        }),
+        createArea.mutateAsync({ name: a.name, color: a.color, description: "" }),
       ),
     );
-    toast.success("Welcome to your garden");
-    navigate("/dashboard");
-  } catch {
-    toast.error("Couldn't save your profile — please try again");
-  }
-};
+     toast.success("Welcome to your garden");
+     navigate("/dashboard");
+   } catch {
+     toast.error("Couldn't save your profile — please try again");
+   }
+  };
 
   const canNext = () => {
     if (step === 0) return name.trim().length > 0;
