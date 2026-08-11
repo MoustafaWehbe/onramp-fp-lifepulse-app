@@ -139,6 +139,32 @@ cd "$REPO_DIR/packages/api"
 sudo -u "$APP_USER" --preserve-env=PATH \
   env NODE_ENV=production DATABASE_URL="$DATABASE_URL" \
   npm run db:migrate
+
+# Reference data the app cannot function without — the goals catalogue backs the
+# onboarding picker, and without it GET /api/goals returns [].
+#
+# Deliberately NOT `db:seed:all`. That would also run the admin-user seeder,
+# which inserts admin@example.com with the hardcoded password "Admin1234!" and
+# role "admin" — fine on a laptop, a publicly-known administrator login on an
+# internet-facing deployment.
+#
+# config.js sets seederStorage "sequelize", so an applied seeder is recorded in
+# SequelizeData and never re-inserts. But sequelize-cli treats "already applied"
+# as an ERROR ("Migration is not pending") and exits non-zero, which under set -e
+# would fail every deploy after the first. Tolerate exactly that case and nothing
+# else — a genuine seeding failure must still stop the deploy.
+log "seeding reference data"
+if ! SEED_OUT=$(sudo -u "$APP_USER" --preserve-env=PATH \
+      env NODE_ENV=production DATABASE_URL="$DATABASE_URL" \
+      npm run db:seed:reference 2>&1); then
+  if echo "$SEED_OUT" | grep -q "Migration is not pending"; then
+    log "reference data already seeded"
+  else
+    log "FATAL: seeding failed"
+    echo "$SEED_OUT" >&2
+    exit 1
+  fi
+fi
 cd "$REPO_DIR"
 
 # ─── Services ─────────────────────────────────────────────────────────────────
