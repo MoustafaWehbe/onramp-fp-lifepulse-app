@@ -68,6 +68,8 @@ POSTGRES_PASSWORD=$(get_param POSTGRES_PASSWORD)
 OPENAI_API_KEY=$(get_param_optional OPENAI_API_KEY)
 PUBLIC_ORIGIN=$(get_param PUBLIC_ORIGIN)
 
+DATABASE_URL="postgresql://postgres:$POSTGRES_PASSWORD@localhost:5433/starter_kit"
+
 umask 077
 cat > "$ENV_FILE" <<ENV
 NODE_ENV=production
@@ -76,7 +78,7 @@ PORT=3000
 # survives instance replacement.
 DATA_DIR=/mnt/data
 CORS_ORIGIN=$PUBLIC_ORIGIN
-DATABASE_URL=postgresql://postgres:$POSTGRES_PASSWORD@localhost:5433/starter_kit
+DATABASE_URL=$DATABASE_URL
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=$POSTGRES_PASSWORD
 POSTGRES_DB=starter_kit
@@ -125,9 +127,18 @@ done
 # ─── Migrations ───────────────────────────────────────────────────────────────
 # .sequelizerc resolves its paths relative to the working directory, so this must
 # run from packages/api. Migrations are plain .js and are not compiled.
+#
+# DATABASE_URL is passed explicitly rather than left to dotenv. The migration
+# config at src/migrations/config/config.js resolves "../../../../.env", which
+# lands on packages/.env rather than the repo root, so it never finds a file and
+# silently falls back to a hardcoded postgres:postgres URL. That default happens
+# to be correct in local development, which is why the bug is invisible there —
+# but here the password is generated, so the fallback would fail to authenticate.
 log "running migrations"
 cd "$REPO_DIR/packages/api"
-sudo -u "$APP_USER" --preserve-env=PATH npm run db:migrate
+sudo -u "$APP_USER" --preserve-env=PATH \
+  env NODE_ENV=production DATABASE_URL="$DATABASE_URL" \
+  npm run db:migrate
 cd "$REPO_DIR"
 
 # ─── Services ─────────────────────────────────────────────────────────────────
@@ -135,23 +146,34 @@ log "restarting services"
 systemctl enable lifepulse-api lifepulse-workers
 systemctl restart lifepulse-api lifepulse-workers
 
-# Give them a moment to fall over if they are going to, so a broken deploy fails
-# the pulumi up rather than reporting success and dying seconds later.
-sleep 8
-systemctl is-active --quiet lifepulse-api || {
-  log "FATAL: lifepulse-api is not running"
-  journalctl -u lifepulse-api -n 50 --no-pager >&2
+# Poll rather than sleeping a fixed interval: tsx has to transpile the whole
+# dependency graph on a 1 GiB box, so a cold start can take a while. This also
+# means a deploy that leaves the API dead fails the `pulumi up` rather than
+# reporting success and falling over seconds later.
+log "waiting for the API to become healthy"
+HEALTHY=0
+for _ in $(seq 1 30); do
+  if curl -fsS --max-time 5 http://127.0.0.1:3000/health >/dev/null 2>&1; then
+    HEALTHY=1
+    break
+  fi
+  # No point continuing to poll if systemd has already given up on it.
+  if ! systemctl is-active --quiet lifepulse-api; then
+    break
+  fi
+  sleep 5
+done
+
+if [ "$HEALTHY" -ne 1 ]; then
+  log "FATAL: API did not become healthy"
+  systemctl status lifepulse-api --no-pager >&2 || true
+  journalctl -u lifepulse-api -n 80 --no-pager >&2
   exit 1
-}
+fi
+
 systemctl is-active --quiet lifepulse-workers || {
   log "FATAL: lifepulse-workers is not running"
-  journalctl -u lifepulse-workers -n 50 --no-pager >&2
-  exit 1
-}
-
-curl -fsS --max-time 10 http://127.0.0.1:3000/health >/dev/null || {
-  log "FATAL: health check failed"
-  journalctl -u lifepulse-api -n 50 --no-pager >&2
+  journalctl -u lifepulse-workers -n 80 --no-pager >&2
   exit 1
 }
 

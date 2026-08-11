@@ -2,7 +2,7 @@ config:
   aws:region: us-east-1
   aws:profile: personal
   onramp-fp-lifepulse-app:repoUrl: https://github.com/MoustafaWehbe/onramp-fp-lifepulse-app.git
-  onramp-fp-lifepulse-app:repoBranch: main
+  onramp-fp-lifepulse-app:repoBranch: feat/infra-rebuild
   # Pinned so the EBS data volume and the instance always land in the same AZ.
   onramp-fp-lifepulse-app:availabilityZone: us-east-1a
   # Optional — only needed for the AI suggestion/embedding features:
