@@ -1,0 +1,12 @@
+config:
+  aws:region: us-east-1
+  aws:profile: personal
+  onramp-fp-lifepulse-app:repoUrl: https://github.com/MoustafaWehbe/onramp-fp-lifepulse-app.git
+  onramp-fp-lifepulse-app:repoBranch: main
+  # Pinned so the EBS data volume and the instance always land in the same AZ.
+  onramp-fp-lifepulse-app:availabilityZone: us-east-1a
+  # Optional — only needed for the AI suggestion/embedding features:
+  #   pulumi config set --secret onramp-fp-lifepulse-app:openaiApiKey sk-...
+
+  onramp-fp-lifepulse-app:openaiApiKey:
+    secure: AAABAF1YKMXSMSe42brVvEf7tDZ/71vWc8bWNt3YzGvze9ZLAR4U9mcM+sSyfsv1XOwMNhs1WqTKIYcrRJx/zJSY2U9AwBrSmk8e3Vkb32h0rq/5TrRPp9fAk52l1vFcR8WRkA2OIdM4NgBMCkvuas4uuJSgjktXip5a8Li7ccb7/mYtH1oy5qOL7kvhVvBi3golCvqfNKhb3Fd9FCf5zkGF564qdc1MplsdO30tBqcwfv75iXPfG9wzST2F9K3dT9Yf9g==
