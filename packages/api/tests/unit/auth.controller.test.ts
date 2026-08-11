@@ -66,7 +66,7 @@ describe("POST /api/auth/register", () => {
 // ─── POST /api/auth/login ─────────────────────────────────────────────────────
 
 describe("POST /api/auth/login", () => {
-  it("returns 200 with tokens on valid credentials", async () => {
+  it("returns 200 with the user, and sets tokens as httpOnly cookies (not in the body)", async () => {
     mockAuthService.login.mockResolvedValue({
       user: {
         id: "uuid-1",
@@ -83,8 +83,22 @@ describe("POST /api/auth/login", () => {
       .send({ email: "alice@example.com", password: "SecurePass1" });
 
     expect(res.status).toBe(200);
-    expect(res.body.data).toHaveProperty("accessToken");
-    expect(res.body.data).toHaveProperty("refreshToken");
+    expect(res.body.data.user.email).toBe("alice@example.com");
+    // Tokens are never exposed to client-side JS — they only ever travel as
+    // httpOnly cookies, so the response body must not carry them at all.
+    expect(res.body.data).not.toHaveProperty("accessToken");
+    expect(res.body.data).not.toHaveProperty("refreshToken");
+
+    const cookies = res.headers["set-cookie"] as unknown as string[];
+    expect(cookies.some((c) => c.startsWith("accessToken=access.token.here"))).toBe(true);
+    expect(cookies.some((c) => c.startsWith("refreshToken=refresh.token.here"))).toBe(true);
+    expect(cookies.find((c) => c.startsWith("accessToken="))).toEqual(
+      expect.stringContaining("HttpOnly"),
+    );
+    // The refresh cookie is scoped to /api/auth/refresh so it isn't sent on every request.
+    expect(cookies.find((c) => c.startsWith("refreshToken="))).toEqual(
+      expect.stringContaining("Path=/api/auth/refresh"),
+    );
   });
 
   it("returns 422 when body is missing", async () => {

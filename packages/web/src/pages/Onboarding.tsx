@@ -12,7 +12,6 @@ import {
 } from "@/lib/store";
 import { useGoals } from "@/hooks/useGoals";
 import { useCompleteOnboarding } from "@/hooks/useProfile";
-import { useCreateArea } from "@/hooks/useAreas";
 import { AREA_PRESETS, areaTokens } from "@/lib/area-colors";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -72,7 +71,6 @@ export function Onboarding() {
   const completeOnboarding = useCompleteOnboarding();
   const goalLabels = goalCatalog?.map((g) => g.label) ?? [];
   const { user } = useAuth();
-  const createArea = useCreateArea();
   const [step, setStep] = useState(0);
 
   const [name, setName] = useState(user?.name ?? "");

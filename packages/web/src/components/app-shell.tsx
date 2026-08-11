@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   BarChart3,
   User,
-  Sparkles,
   LogOut,
 } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
@@ -210,56 +209,5 @@ export function PageHeader({
       </div>
       {action}
     </header>
-  );
-}
-
-export function AiPanel() {
-  return (
-    <div className="rounded-2xl bg-foreground p-6 text-background">
-      <div className="mb-4 flex items-center gap-2">
-        <div
-          className={`size-1.5 animate-pulse rounded-full ${areaTokens.spirit.bg}`}
-          aria-hidden="true"
-        />
-        <span className="mono text-[10px] font-medium uppercase tracking-widest text-background/60">
-          AI Synthesizer
-        </span>
-      </div>
-      <div className="mb-4 flex items-start gap-3">
-        <Sparkles
-          className={`size-5 shrink-0 ${areaTokens.spirit.text}`}
-          aria-hidden="true"
-        />
-        <div>
-          <h4 className="text-base font-bold">Recommendations coming soon</h4>
-          <p className="mt-1 text-sm text-background/70">
-            Once enabled, Kultivar will suggest 3–5 habits per area based on
-            your profile, goals, stress, and the areas you&apos;ve created.
-          </p>
-        </div>
-      </div>
-      <div className="space-y-2" aria-label="Preview of upcoming AI suggestions">
-        {[
-          { area: "Health", text: "20-20-20 eye breaks during deep work" },
-          { area: "Career", text: "End-of-day shutdown ritual" },
-          { area: "Mind", text: "Two-minute breath reset before meetings" },
-        ].map((s, i) => (
-          <div
-            key={i}
-            className="rounded-lg bg-background/5 p-3 ring-1 ring-background/10"
-          >
-            <div className="mb-1 flex items-center justify-between">
-              <span className="mono text-[10px] uppercase tracking-wider text-background/60">
-                {s.area}
-              </span>
-              <span className="mono text-[10px] text-background/40">
-                preview
-              </span>
-            </div>
-            <p className="text-sm">{s.text}</p>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }

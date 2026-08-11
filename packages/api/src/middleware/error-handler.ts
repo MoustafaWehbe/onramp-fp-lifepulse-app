@@ -3,6 +3,8 @@ import type { Request, Response, NextFunction } from "express";
 export interface AppError extends Error {
   statusCode?: number;
   isOperational?: boolean;
+  /** Optional hint for 429 responses so clients can show a countdown instead of just retrying blindly. */
+  retryAfterSeconds?: number;
 }
 
 export function createError(message: string, statusCode = 500): AppError {
@@ -28,6 +30,7 @@ export function errorHandler(
 
   res.status(statusCode).json({
     error: message,
+    ...(err.retryAfterSeconds !== undefined && { retryAfterSeconds: err.retryAfterSeconds }),
     ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
 }

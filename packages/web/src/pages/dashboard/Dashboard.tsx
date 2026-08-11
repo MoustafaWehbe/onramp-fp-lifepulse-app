@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { Plus, Flame, TrendingUp, ArrowRight } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
-import { AppShell, PageHeader, AiPanel } from "@/components/app-shell";
+import { AppShell, PageHeader } from "@/components/app-shell";
+import { AiPanel } from "@/components/ai-panel";
 import { AreaBadge, AreaPct } from "@/components/area/area-badge";
 import { AreaDot } from "@/components/area/area-dot";
 import { AreaProgress } from "@/components/area/area-progress";
@@ -41,9 +42,7 @@ export function Dashboard() {
 
   let streak = 0;
   for (let i = 0; i < 365; i++) {
-    const d = new Date();
-    d.setUTCDate(d.getUTCDate() - i);
-    const ds = d.toISOString().slice(0, 10);
+    const ds = daysAgoStr(i);
     if (checkins.some((c) => c.date === ds)) streak++;
     else if (i > 0) break;
   }
