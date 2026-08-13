@@ -47,5 +47,8 @@ Thumbs.db
 # ─── TypeScript ───────────────────────────────────────────────────────────────
 *.tsbuildinfo
 
+# ─── Local datastore volumes (docker-compose DATA_DIR default) ────────────────
+.data/
+
 # ─── Generated message previews (npm run preview:messages) ────────────────────
 message-previews/

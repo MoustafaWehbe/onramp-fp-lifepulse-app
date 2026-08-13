@@ -21,7 +21,10 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
-    sourcemap: true,
+    // The build output is uploaded to a public CloudFront distribution, so
+    // source maps here would publish the entire frontend source. The S3 sync in
+    // infra/deploy.ts also excludes *.map as a second line of defence.
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {

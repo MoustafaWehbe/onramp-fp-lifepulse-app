@@ -15,6 +15,7 @@ import { useCompleteOnboarding } from "@/hooks/useProfile";
 import { AREA_PRESETS, areaTokens } from "@/lib/area-colors";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useCreateArea } from "@/hooks/useAreas";
 import { PillSelect, TagInput } from "@/components/profile-fields";
 import { toast } from "sonner";
 

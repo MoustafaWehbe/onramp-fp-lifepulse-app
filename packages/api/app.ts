@@ -26,18 +26,17 @@ const app = express();
 // start (ERR_ERL_UNEXPECTED_X_FORWARDED_FOR) when it sees a forwarded header it
 // has been told not to trust.
 //
-// Exactly one hop: CloudFront is the only proxy, and it overwrites
-// X-Forwarded-For with the real viewer address.
-app.set("trust proxy", 1);
+// One hop by default: CloudFront is the only proxy, and it overwrites
+// X-Forwarded-For with the real viewer address. TRUST_PROXY covers the other
+// deployments — a different hop count, or "false" when nothing fronts the API.
+app.set(
+  "trust proxy",
+  process.env.TRUST_PROXY === "false"
+    ? false
+    : Number(process.env.TRUST_PROXY ?? 1),
+);
 
 // ─── Security ─────────────────────────────────────────────────────────────────
-// Behind a reverse proxy (nginx, a load balancer) req.ip is otherwise the
-// proxy's address, which would make rate limiting global and record the wrong
-// IP on every session.
-if (process.env.TRUST_PROXY !== "false") {
-  app.set("trust proxy", Number(process.env.TRUST_PROXY ?? 1));
-}
-
 app.use(helmet());
 app.use(originGuard);
 app.use(

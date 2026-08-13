@@ -66,14 +66,5 @@ jobs:
       - run: npm ci
       - name: Run migrations
         run: npm run db:migrate --workspace=@starter-kit/api
-      # web is excluded from build and test: package-lock.json is generated on
-      # Windows, so it records only the win32 builds of rollup, esbuild,
-      # lightningcss and @tailwindcss/oxide (npm/cli#4828), and npm won't
-      # re-resolve optional platform dependencies against an existing lock. On
-      # Linux that leaves a rollup that can't load its own native module, which
-      # breaks `vite build` and `vitest`. tsc needs no native binaries, so the
-      # frontend is still typechecked. Generating the lockfile on Linux would let
-      # both run here — and would break local installs on Windows.
-      - run: npm run build -- --filter='!@starter-kit/web'
-      - run: npm run typecheck --workspace=@starter-kit/web
-      - run: npm run test -- --filter='!@starter-kit/web'
+      - run: npm run build
+      - run: npm run test

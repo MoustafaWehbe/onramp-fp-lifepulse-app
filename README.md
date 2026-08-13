@@ -94,7 +94,7 @@ cd packages/web && npm test  # Web tests (Vitest)
 
 ## Docker
 
-Docker runs the two dependencies; the app itself always runs with
+Locally, Docker runs the two dependencies; the app itself runs with
 `npm run dev`.
 
 - **PostgreSQL 16** on host port `5433` (mapped from `5432`, so it doesn't
@@ -105,19 +105,9 @@ Docker runs the two dependencies; the app itself always runs with
 docker compose up -d
 ```
 
-There are deliberately no images for `api`, `web`, or `workers`. Containerising
-the app is worth revisiting before a real deployment, and it needs one problem
-solved first: `package-lock.json` is generated on Windows, so the only native
-builds of `rollup`, `esbuild`, `lightningcss`, and `@tailwindcss/oxide` recorded
-in it are the win32 ones ([npm/cli#4828]). npm won't re-resolve optional platform
-dependencies against an existing lock, so on Linux `vite build` and `vitest`
-fail. It's also why CI typechecks the frontend instead of building it. Settling
-on one platform for generating the lockfile fixes all of it.
-
-[npm/cli#4828]: https://github.com/npm/cli/issues/4828
-The `docker-compose.yml` starts:
-- **PostgreSQL 16** on port `5433` (5432 inside the container)
-- **Redis 7** on port `6379`
+There are deliberately no images for `api`, `web`, or `workers` — the app is
+deployed to EC2 directly (see [Deployment](#deployment)), so containerising it
+would only add a second way to run the same thing.
 
 Data is written to `$DATA_DIR`, which defaults to `./.data` locally and is set to
 the persistent EBS mount `/mnt/data` in production.
