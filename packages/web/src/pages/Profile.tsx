@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { PillSelect, TagInput } from "@/components/profile-fields";
+import { NotificationSettings } from "@/components/notification-settings";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
 import axios from "axios";
@@ -477,30 +478,38 @@ const save = async (e: FormEvent) => {
           </Card>
         </div>
 
-        {/* AI panel */}
-        <aside>
-          <h2 className="mb-4 mono text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-            AI integration
-          </h2>
-          <Card className="bg-foreground p-6 text-background">
-            <div className="mb-4 flex items-center gap-2">
-              <Sparkles
-                className={`size-4 ${areaTokens.spirit.text}`}
-                aria-hidden="true"
-              />
-              <span className="mono text-[10px] uppercase tracking-widest text-background/60">
-                Coming soon
-              </span>
-            </div>
-            <h3 className="text-base font-bold">
-              Personalised recommendations
-            </h3>
-            <p className="mt-2 text-sm text-background/70">
-              When the AI engine is enabled, updating your stress level, sleep,
-              or goals will refresh habit suggestions for every life area
-              automatically.
-            </p>
-          </Card>
+        <aside className="space-y-8">
+          <div>
+            <h2 className="mb-4 mono text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+              Reminders
+            </h2>
+            <NotificationSettings />
+          </div>
+
+          <div>
+            <h2 className="mb-4 mono text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+              AI integration
+            </h2>
+            <Card className="bg-foreground p-6 text-background">
+              <div className="mb-4 flex items-center gap-2">
+                <Sparkles
+                  className={`size-4 ${areaTokens.spirit.text}`}
+                  aria-hidden="true"
+                />
+                <span className="mono text-[10px] uppercase tracking-widest text-background/60">
+                  Coming soon
+                </span>
+              </div>
+              <h3 className="text-base font-bold">
+                Personalised recommendations
+              </h3>
+              <p className="mt-2 text-sm text-background/70">
+                When the AI engine is enabled, updating your stress level, sleep,
+                or goals will refresh habit suggestions for every life area
+                automatically.
+              </p>
+            </Card>
+          </div>
         </aside>
       </form>
     </AppShell>

@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { authService } from "../services/auth.service";
+import { CSRF_COOKIE, clearCsrfToken, issueCsrfToken } from "../middleware/csrf";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -28,11 +29,13 @@ function setAuthCookies(
     path: "/api/auth/refresh",
     maxAge: REFRESH_MAX_AGE,
   });
+  issueCsrfToken(res);
 }
 
 function clearAuthCookies(res: Response): void {
   res.clearCookie(ACCESS_COOKIE, { path: "/api" });
   res.clearCookie(REFRESH_COOKIE, { path: "/api/auth/refresh" });
+  clearCsrfToken(res);
 }
 
 export const authController = {
@@ -97,6 +100,10 @@ export const authController = {
   async me(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await authService.getProfile(req.user!.userId);
+      // Sessions outlive the CSRF cookie's browser lifetime in some cases (and
+      // predate this feature entirely), so reissue on the session probe rather
+      // than forcing a re-login.
+      if (!req.cookies?.[CSRF_COOKIE]) issueCsrfToken(res);
       res.json({ data: user });
     } catch (err) {
       next(err);

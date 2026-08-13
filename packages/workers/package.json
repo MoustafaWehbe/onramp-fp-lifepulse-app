@@ -6,7 +6,9 @@
     "dev": "tsx watch index.ts",
     "build": "tsc --project tsconfig.build.json",
     "start": "node dist/index.js",
-    "lint": "eslint 'src/**/*.ts' 'index.ts'",
+    "send:reengagement": "tsx src/scripts/send-reengagement.ts",
+    "preview:messages": "tsx src/scripts/preview-messages.ts",
+    "lint": "eslint --config ../../eslint.config.mjs \"src/**/*.ts\" index.ts",
     "clean": "rm -rf dist"
   },
   "dependencies": {

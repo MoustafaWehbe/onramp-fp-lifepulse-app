@@ -39,8 +39,10 @@ npm install
 ### 3. Start infrastructure
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
+
+Starts PostgreSQL and Redis only — see [Docker](#docker).
 
 ### 4. Configure environment
 
@@ -92,6 +94,24 @@ cd packages/web && npm test  # Web tests (Vitest)
 
 ## Docker
 
-The `docker-compose.yml` starts:
-- **PostgreSQL 16** on port `5432`
-- **Redis 7** on port `6379`
+Docker runs the two dependencies; the app itself always runs with
+`npm run dev`.
+
+- **PostgreSQL 16** on host port `5433` (mapped from `5432`, so it doesn't
+  collide with a PostgreSQL installed directly on the machine)
+- **Redis 7** on host port `6379`
+
+```bash
+docker compose up -d
+```
+
+There are deliberately no images for `api`, `web`, or `workers`. Containerising
+the app is worth revisiting before a real deployment, and it needs one problem
+solved first: `package-lock.json` is generated on Windows, so the only native
+builds of `rollup`, `esbuild`, `lightningcss`, and `@tailwindcss/oxide` recorded
+in it are the win32 ones ([npm/cli#4828]). npm won't re-resolve optional platform
+dependencies against an existing lock, so on Linux `vite build` and `vitest`
+fail. It's also why CI typechecks the frontend instead of building it. Settling
+on one platform for generating the lockfile fixes all of it.
+
+[npm/cli#4828]: https://github.com/npm/cli/issues/4828

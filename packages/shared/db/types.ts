@@ -28,3 +28,15 @@ export type HabitFrequency = "daily" | "weekdays" | "3x" | "5x" | "weekly";
 export type HabitDifficulty = "easy" | "medium" | "hard";
 
 export type AiSuggestionStatus = "pending" | "accepted" | "dismissed";
+
+export type NotificationChannel = "push" | "email";
+
+/**
+ * Rungs on the re-engagement ladder, keyed by days of inactivity. Stored in
+ * notification_logs so a user only ever receives each rung once per lapse.
+ */
+export type NotificationType =
+  | "reengagement_3d"
+  | "reengagement_7d"
+  | "reengagement_14d"
+  | "reengagement_30d";

@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { aiSuggestionsService } from "../services/ai-suggestions.service";
+import { pathParam } from "../lib/request";
 
 export const aiSuggestionsController = {
   async generate(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -22,7 +23,7 @@ export const aiSuggestionsController = {
 
   async accept(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const suggestion = await aiSuggestionsService.accept(req.user!.userId, req.params.id);
+      const suggestion = await aiSuggestionsService.accept(req.user!.userId, pathParam(req, "id"));
       res.json({ data: suggestion });
     } catch (err) {
       next(err);
@@ -40,7 +41,7 @@ export const aiSuggestionsController = {
 
   async dismiss(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const suggestion = await aiSuggestionsService.dismiss(req.user!.userId, req.params.id);
+      const suggestion = await aiSuggestionsService.dismiss(req.user!.userId, pathParam(req, "id"));
       res.json({ data: suggestion });
     } catch (err) {
       next(err);

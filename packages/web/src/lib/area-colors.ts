@@ -207,6 +207,17 @@ export const areaTokens: Record<AreaColor, AreaTokens> = {
   },
 };
 
+/**
+ * Tokens for a colour that came from the server. The API validates `color`
+ * against AREA_COLORS, but a row written outside it (a seeder, a manual fix)
+ * can still hold something unexpected — and indexing `areaTokens` directly
+ * would return undefined and take down the whole page. Prefer this over
+ * `areaTokens[color]` anywhere the value originates from an API response.
+ */
+export function tokensFor(color: string): AreaTokens {
+  return areaTokens[color as AreaColor] ?? areaTokens.health;
+}
+
 /** @deprecated Use areaTokens instead */
 export const AREA_COLOR_MAP: Record<
   AreaColor,
@@ -285,9 +296,9 @@ export const AREA_COLOR_MAP: Record<
 };
 
 export function areaStyle(color: AreaColor): CSSProperties {
-  return { backgroundColor: areaTokens[color].cssVar };
+  return { backgroundColor: tokensFor(color).cssVar };
 }
 
 export function areaMix(color: AreaColor, pct: number): string {
-  return `color-mix(in oklch, ${areaTokens[color].cssVar} ${pct}%, transparent)`;
+  return `color-mix(in oklch, ${tokensFor(color).cssVar} ${pct}%, transparent)`;
 }

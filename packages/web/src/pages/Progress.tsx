@@ -7,7 +7,7 @@ import { daysAgoStr, todayStr } from "@/lib/store";
 import { useAreas } from "@/hooks/useAreas";
 import { useHabits } from "@/hooks/useHabits";
 import { useCheckIns, isChecked } from "@/hooks/useCheckIns";
-import { areaMix, areaTokens } from "@/lib/area-colors";
+import { areaMix, tokensFor } from "@/lib/area-colors";
 import { Card } from "@/components/ui/card";
 import {
   LineChart,
@@ -184,7 +184,7 @@ export function ProgressPage() {
                   key={a.id}
                   type="monotone"
                   dataKey={a.name}
-                  stroke={areaTokens[a.color].cssVar}
+                  stroke={tokensFor(a.color).cssVar}
                   strokeWidth={2}
                   dot={false}
                 />
@@ -217,7 +217,7 @@ export function ProgressPage() {
                     <span
                       className={cn(
                         "text-sm font-semibold",
-                        areaTokens[a.color].text,
+                        tokensFor(a.color).text,
                       )}
                     >
                       {a.name}

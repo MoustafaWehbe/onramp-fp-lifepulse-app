@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: starter_kit_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/starter_kit_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci-jwt-secret
+      JWT_REFRESH_SECRET: ci-refresh-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Run migrations
+        run: npm run db:migrate --workspace=@starter-kit/api
+      # web is excluded from build and test: package-lock.json is generated on
+      # Windows, so it records only the win32 builds of rollup, esbuild,
+      # lightningcss and @tailwindcss/oxide (npm/cli#4828), and npm won't
+      # re-resolve optional platform dependencies against an existing lock. On
+      # Linux that leaves a rollup that can't load its own native module, which
+      # breaks `vite build` and `vitest`. tsc needs no native binaries, so the
+      # frontend is still typechecked. Generating the lockfile on Linux would let
+      # both run here — and would break local installs on Windows.
+      - run: npm run build -- --filter='!@starter-kit/web'
+      - run: npm run typecheck --workspace=@starter-kit/web
+      - run: npm run test -- --filter='!@starter-kit/web'

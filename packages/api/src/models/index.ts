@@ -10,4 +10,5 @@ export {
   HabitCompletion,
   AiSuggestion,
   Embedding,
+  NotificationPreference,
 } from "@starter-kit/shared";

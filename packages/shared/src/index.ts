@@ -10,5 +10,12 @@ export * from "../queue";
 // AI
 export * from "../ai";
 
+// Email
+export * from "../email";
+
+// Notifications
+export * from "../notifications";
+
 // Utils
 export * from "../utils/date";
+export * from "../utils/streaks";

@@ -14,7 +14,8 @@ export function createError(message: string, statusCode = 500): AppError {
   return error;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// The unused `next` parameter is required: Express only treats a handler as an
+// error handler when it declares four arguments.
 export function errorHandler(
   err: AppError,
   _req: Request,

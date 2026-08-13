@@ -8,10 +8,13 @@ import {
 } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useAreas } from "@/hooks/useAreas";
-import { areaTokens } from "@/lib/area-colors";
+import { tokensFor } from "@/lib/area-colors";
 import { AreaDot } from "@/components/area/area-dot";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useWelcomeBack } from "@/hooks/useWelcomeBack";
+import { WelcomeBack } from "@/components/welcome-back";
+import { ReminderPopup } from "@/components/reminder-popup";
 import type { ReactNode } from "react";
 
 const nav = [
@@ -26,6 +29,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: areas = [] } = useAreas();
   const { user, logout } = useAuth();
   const { data: liveProfile } = useProfile();
+  // Lives here rather than on a single page so the greeting reaches whichever
+  // screen the user lands on, and a due reminder interrupts wherever they are.
+  const welcomeBack = useWelcomeBack();
 
   const displayName = user?.name ?? liveProfile?.name;
   const displayJob = liveProfile?.profession;
@@ -90,7 +96,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ul className="space-y-0.5">
               {areas.map((a) => {
                 const active = pathname === `/areas/${a.id}`;
-                const t = areaTokens[a.color];
+                const t = tokensFor(a.color);
                 return (
                   <li key={a.id}>
                     <Link
@@ -173,7 +179,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <main id="main-content" className="lg:ml-60" tabIndex={-1}>
-        <div className="mx-auto max-w-6xl px-6 py-10 lg:py-12">{children}</div>
+        <div className="mx-auto max-w-6xl px-6 py-10 lg:py-12">
+          <WelcomeBack state={welcomeBack} />
+          {/* Greeting first: stacking both modals on a returning user would bury it. */}
+          {welcomeBack.mode !== "popup" && <ReminderPopup />}
+          {children}
+        </div>
       </main>
     </div>
   );

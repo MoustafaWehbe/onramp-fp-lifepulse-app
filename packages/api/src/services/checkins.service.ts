@@ -1,5 +1,5 @@
 import { Op } from "sequelize";
-import { todayInTimeZone } from "@starter-kit/shared";
+import { todayInTimeZone, currentStreak, longestStreak } from "@starter-kit/shared";
 import { HabitCompletion, Habit } from "../models";
 import { createError } from "../middleware/error-handler";
 import type { CreateCheckInInput } from "../schemas/checkins.schemas";
@@ -11,6 +11,9 @@ interface CheckInListFilters {
 }
 
 const DEFAULT_RANGE_DAYS = 30;
+
+/** A year of history is plenty for "longest streak" without scanning everything. */
+const STREAK_LOOKBACK_DAYS = 365;
 
 function serializeCheckIn(checkIn: HabitCompletion) {
   return {
@@ -100,6 +103,45 @@ export class CheckInsService {
     return checkIns
       .filter((c) => todayByHabitId.get(c.habitId) === c.completionDate)
       .map(serializeCheckIn);
+  }
+
+  /**
+   * Activity summary used by the welcome-back banner: how long the user has
+   * been away, plus the streak figures that make the greeting concrete rather
+   * than generic. `daysSinceLastCheckIn` is null for users who have never
+   * checked in — they're new, not lapsed, and shouldn't be welcomed "back".
+   */
+  async activity(userId: string, clientTimezone?: string) {
+    const today = todayInTimeZone(clientTimezone || "UTC");
+
+    const completions = await HabitCompletion.findAll({
+      where: {
+        userId,
+        completed: true,
+        completionDate: { [Op.gte]: daysAgoISODate(STREAK_LOOKBACK_DAYS) },
+      },
+      attributes: ["completionDate"],
+      order: [["completionDate", "DESC"]],
+    });
+
+    const dates = completions.map((c) => c.completionDate);
+    const lastCheckInDate = dates[0] ?? null;
+
+    return {
+      lastCheckInDate,
+      daysSinceLastCheckIn: lastCheckInDate
+        ? Math.max(
+            0,
+            Math.round(
+              (Date.parse(`${today}T00:00:00Z`) -
+                Date.parse(`${lastCheckInDate}T00:00:00Z`)) /
+                86_400_000,
+            ),
+          )
+        : null,
+      currentStreak: currentStreak(dates, today),
+      longestStreak: longestStreak(dates),
+    };
   }
 
   async create(

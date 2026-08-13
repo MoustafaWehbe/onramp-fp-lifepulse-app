@@ -46,3 +46,6 @@ Thumbs.db
 
 # ─── TypeScript ───────────────────────────────────────────────────────────────
 *.tsbuildinfo
+
+# ─── Generated message previews (npm run preview:messages) ────────────────────
+message-previews/

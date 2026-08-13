@@ -10,7 +10,12 @@ import { todayStr, daysAgoStr } from "@/lib/store";
 import { useAreas, useCreateArea } from "@/hooks/useAreas";
 import { useHabits } from "@/hooks/useHabits";
 import { useCheckIns, useTodayCheckIns, isChecked } from "@/hooks/useCheckIns";
-import { AREA_COLORS, areaTokens, type AreaColor } from "@/lib/area-colors";
+import {
+  AREA_COLORS,
+  areaTokens,
+  tokensFor,
+  type AreaColor,
+} from "@/lib/area-colors";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -191,7 +196,7 @@ export function Dashboard() {
           )}
           {!areasLoading &&
             areas.map((area) => {
-              const t = areaTokens[area.color];
+              const t = tokensFor(area.color);
               const areaHabits = habits.filter((h) => h.areaId === area.id);
               const areaDone = areaHabits.filter((h) =>
                 isChecked(todayCheckins, h.id),
@@ -246,7 +251,7 @@ export function Dashboard() {
           </h2>
           <div className="space-y-6">
             {areas.map((area) => {
-              const t = areaTokens[area.color];
+              const t = tokensFor(area.color);
               const areaHabits = habits.filter((h) => h.areaId === area.id);
               if (areaHabits.length === 0) return null;
               return (
