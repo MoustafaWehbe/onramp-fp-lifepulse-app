@@ -6,10 +6,17 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-starter_kit}
+      # On a bind mount the mount point itself is not empty as far as initdb is
+      # concerned, so give it a subdirectory to own.
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - '5433:5432' # 5433 avoids conflict with a local PostgreSQL install on 5432
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # DATA_DIR is /mnt/data in production — a dedicated EBS volume that is not
+      # part of the instance's block device mapping, so replacing or rebuilding
+      # the EC2 instance leaves the database intact. Locally it defaults to
+      # ./.data, so `docker compose up` still just works after a fresh clone.
+      - ${DATA_DIR:-./.data}/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
       interval: 10s
@@ -19,16 +26,15 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    # Without appendonly the queue state is memory-only and every restart drops
+    # pending jobs and the per-habit reminder schedulers.
+    command: ['redis-server', '--appendonly', 'yes']
     ports:
       - '6379:6379'
     volumes:
-      - redis_data:/data
+      - ${DATA_DIR:-./.data}/redis:/data
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
-
-volumes:
-  postgres_data:
-  redis_data:

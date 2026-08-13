@@ -2,10 +2,16 @@
   "extends": "./config/tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "./",
-    "ignoreDeprecations": "5.0",
     "outDir": "./dist",
     "baseUrl": "."
   },
-  "include": ["src/**/*", "auth/**/*", "ai/**/*", "queue/**/*", "db/**/*", "utils/**/*"],
+  "include": [
+    "src/**/*",
+    "auth/**/*",
+    "ai/**/*",
+    "queue/**/*",
+    "db/**/*",
+    "utils/**/*"
+  ],
   "exclude": ["node_modules", "dist"]
 }

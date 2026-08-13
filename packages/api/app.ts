@@ -8,6 +8,7 @@ import fs from "fs";
 import path from "path";
 import cookieParser from "cookie-parser";
 import { errorHandler } from "./src/middleware/error-handler";
+import { originGuard } from "./src/middleware/origin-guard";
 import { rateLimiter } from "./src/middleware/rate-limiter";
 import { csrfProtection } from "./src/middleware/csrf";
 import { authenticate } from "./src/middleware/authenticate";
@@ -16,6 +17,18 @@ import { router } from "./src/routes";
 import { healthReport } from "./src/lib/health";
 
 const app = express();
+
+// ─── Proxy awareness ──────────────────────────────────────────────────────────
+// In production this process sits behind CloudFront, so the socket peer is an
+// edge server rather than the user. Without this, req.ip resolves to that edge
+// server and every user in a region shares a single rate-limit bucket — the API
+// would start 429-ing under trivial load. express-rate-limit also refuses to
+// start (ERR_ERL_UNEXPECTED_X_FORWARDED_FOR) when it sees a forwarded header it
+// has been told not to trust.
+//
+// Exactly one hop: CloudFront is the only proxy, and it overwrites
+// X-Forwarded-For with the real viewer address.
+app.set("trust proxy", 1);
 
 // ─── Security ─────────────────────────────────────────────────────────────────
 // Behind a reverse proxy (nginx, a load balancer) req.ip is otherwise the
@@ -26,6 +39,7 @@ if (process.env.TRUST_PROXY !== "false") {
 }
 
 app.use(helmet());
+app.use(originGuard);
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN ?? "http://localhost:5173",
