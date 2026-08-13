@@ -39,7 +39,7 @@ npm install
 ### 3. Start infrastructure
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### 4. Configure environment
@@ -93,5 +93,24 @@ cd packages/web && npm test  # Web tests (Vitest)
 ## Docker
 
 The `docker-compose.yml` starts:
-- **PostgreSQL 16** on port `5432`
+- **PostgreSQL 16** on port `5433` (5432 inside the container)
 - **Redis 7** on port `6379`
+
+Data is written to `$DATA_DIR`, which defaults to `./.data` locally and is set to
+the persistent EBS mount `/mnt/data` in production.
+
+## Deployment
+
+Deployed to AWS with Pulumi — CloudFront + S3 for the frontend, a single EC2
+instance for the API, workers and datastores. From the repo root:
+
+```bash
+cd infra && pulumi up
+```
+
+That provisions infrastructure *and* ships the app: the SPA is built locally and
+synced to S3, and the API is updated on the instance over SSM. Push your commit
+first — the instance pulls it from GitHub.
+
+See [infra/README.md](infra/README.md) for the architecture, cost breakdown, and
+operational commands.

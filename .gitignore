@@ -46,3 +46,6 @@ Thumbs.db
 
 # ─── TypeScript ───────────────────────────────────────────────────────────────
 *.tsbuildinfo
+
+# ─── Local datastore volumes (docker-compose DATA_DIR default) ────────────────
+.data/
