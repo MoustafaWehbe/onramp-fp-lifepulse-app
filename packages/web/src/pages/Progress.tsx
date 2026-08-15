@@ -7,7 +7,7 @@ import { daysAgoStr, todayStr } from "@/lib/store";
 import { useAreas } from "@/hooks/useAreas";
 import { useHabits } from "@/hooks/useHabits";
 import { useCheckIns, isChecked } from "@/hooks/useCheckIns";
-import { areaMix, areaTokens } from "@/lib/area-colors";
+import { areaMix, tokensFor } from "@/lib/area-colors";
 import { Card } from "@/components/ui/card";
 import {
   LineChart,
@@ -35,9 +35,9 @@ export function ProgressPage() {
     const arr: { date: string; label: string }[] = [];
     for (let i = windowDays - 1; i >= 0; i--) {
       const d = new Date();
-      d.setUTCDate(d.getUTCDate() - i);
+      d.setDate(d.getDate() - i);
       arr.push({
-        date: d.toISOString().slice(0, 10),
+        date: daysAgoStr(i),
         label: d.toLocaleDateString(undefined, {
           month: "short",
           day: "numeric",
@@ -78,9 +78,7 @@ export function ProgressPage() {
 
   let streak = 0;
   for (let i = 0; i < 365; i++) {
-    const d = new Date();
-    d.setUTCDate(d.getUTCDate() - i);
-    const ds = d.toISOString().slice(0, 10);
+    const ds = daysAgoStr(i);
     if (checkins.some((c) => c.date === ds)) streak++;
     else if (i > 0) break;
   }
@@ -186,7 +184,7 @@ export function ProgressPage() {
                   key={a.id}
                   type="monotone"
                   dataKey={a.name}
-                  stroke={areaTokens[a.color].cssVar}
+                  stroke={tokensFor(a.color).cssVar}
                   strokeWidth={2}
                   dot={false}
                 />
@@ -219,7 +217,7 @@ export function ProgressPage() {
                     <span
                       className={cn(
                         "text-sm font-semibold",
-                        areaTokens[a.color].text,
+                        tokensFor(a.color).text,
                       )}
                     >
                       {a.name}

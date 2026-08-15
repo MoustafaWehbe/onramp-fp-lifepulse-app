@@ -42,6 +42,8 @@ npm install
 docker compose up -d
 ```
 
+Starts PostgreSQL and Redis only — see [Docker](#docker).
+
 ### 4. Configure environment
 
 ```bash
@@ -92,9 +94,20 @@ cd packages/web && npm test  # Web tests (Vitest)
 
 ## Docker
 
-The `docker-compose.yml` starts:
-- **PostgreSQL 16** on port `5433` (5432 inside the container)
-- **Redis 7** on port `6379`
+Locally, Docker runs the two dependencies; the app itself runs with
+`npm run dev`.
+
+- **PostgreSQL 16** on host port `5433` (mapped from `5432`, so it doesn't
+  collide with a PostgreSQL installed directly on the machine)
+- **Redis 7** on host port `6379`
+
+```bash
+docker compose up -d
+```
+
+There are deliberately no images for `api`, `web`, or `workers` — the app is
+deployed to EC2 directly (see [Deployment](#deployment)), so containerising it
+would only add a second way to run the same thing.
 
 Data is written to `$DATA_DIR`, which defaults to `./.data` locally and is set to
 the persistent EBS mount `/mnt/data` in production.

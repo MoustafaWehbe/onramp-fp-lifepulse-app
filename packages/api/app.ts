@@ -10,7 +10,11 @@ import cookieParser from "cookie-parser";
 import { errorHandler } from "./src/middleware/error-handler";
 import { originGuard } from "./src/middleware/origin-guard";
 import { rateLimiter } from "./src/middleware/rate-limiter";
+import { csrfProtection } from "./src/middleware/csrf";
+import { authenticate } from "./src/middleware/authenticate";
+import { authorize } from "./src/middleware/authorize";
 import { router } from "./src/routes";
+import { healthReport } from "./src/lib/health";
 
 const app = express();
 
@@ -22,9 +26,15 @@ const app = express();
 // start (ERR_ERL_UNEXPECTED_X_FORWARDED_FOR) when it sees a forwarded header it
 // has been told not to trust.
 //
-// Exactly one hop: CloudFront is the only proxy, and it overwrites
-// X-Forwarded-For with the real viewer address.
-app.set("trust proxy", 1);
+// One hop by default: CloudFront is the only proxy, and it overwrites
+// X-Forwarded-For with the real viewer address. TRUST_PROXY covers the other
+// deployments — a different hop count, or "false" when nothing fronts the API.
+app.set(
+  "trust proxy",
+  process.env.TRUST_PROXY === "false"
+    ? false
+    : Number(process.env.TRUST_PROXY ?? 1),
+);
 
 // ─── Security ─────────────────────────────────────────────────────────────────
 app.use(helmet());
@@ -45,11 +55,16 @@ app.use(express.urlencoded({ extended: true }));
 
 // ─── Logging ──────────────────────────────────────────────────────────────────
 if (process.env.NODE_ENV !== "test") {
-  app.use(morgan("dev"));
+  // Health probes fire constantly and would otherwise drown out real traffic.
+  app.use(morgan("dev", { skip: (req) => req.url.startsWith("/health") }));
 }
 
 // ─── Rate limiting ────────────────────────────────────────────────────────────
 app.use("/api/", rateLimiter);
+
+// ─── CSRF ─────────────────────────────────────────────────────────────────────
+// Auth rides on cookies, which browsers attach to cross-site requests too.
+app.use("/api", csrfProtection);
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use("/api", router);
@@ -58,16 +73,40 @@ app.use("/api", router);
 const openApiSpec = yaml.load(
   fs.readFileSync(path.join(__dirname, "openapi.yaml"), "utf8"),
 ) as object;
-app.get("/api/openapi.yaml", (_req, res) =>
+
+// The schema enumerates every endpoint and payload shape — handy in dev, free
+// reconnaissance in production.
+const docsGuard =
+  process.env.NODE_ENV === "production"
+    ? [authenticate, authorize("admin")]
+    : ([] as never[]);
+
+app.get("/api/openapi.yaml", ...docsGuard, (_req, res) =>
   res.sendFile(path.join(__dirname, "openapi.yaml")),
 );
-app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec));
+app.use(
+  "/api/docs",
+  ...docsGuard,
+  swaggerUi.serve,
+  swaggerUi.setup(openApiSpec),
+);
 
-
-
-// ─── Health check ─────────────────────────────────────────────────────────────
-app.get("/health", (_req, res) => {
+// ─── Health checks ────────────────────────────────────────────────────────────
+// Liveness: is the process up at all? Never touches a dependency, so a database
+// blip can't get the container killed and restarted into the same blip.
+app.get("/health/live", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// Readiness: can this instance actually serve traffic? 503 pulls it out of the
+// load balancer rotation while Postgres or Redis is unreachable.
+app.get("/health", async (_req, res, next) => {
+  try {
+    const report = await healthReport();
+    res.status(report.status === "ok" ? 200 : 503).json(report);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // ─── Error handling (must be last) ────────────────────────────────────────────

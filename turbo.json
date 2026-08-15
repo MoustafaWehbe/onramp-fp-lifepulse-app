@@ -8,6 +8,9 @@
       "outputs": ["dist/**"]
     },
     "dev": {
+      // Ensures @starter-kit/shared has emitted dist/ before api and workers
+      // start, since they resolve it as a normal package at runtime.
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },

@@ -10,6 +10,8 @@ import { Habit } from "./Habit";
 import { HabitCompletion } from "./HabitCompletion";
 import { AiSuggestion } from "./AiSuggestion";
 import { Embedding } from "./Embedding";
+import { NotificationPreference } from "./NotificationPreference";
+import { NotificationLog } from "./NotificationLog";
 
 export {
   User,
@@ -23,6 +25,8 @@ export {
   HabitCompletion,
   AiSuggestion,
   Embedding,
+  NotificationPreference,
+  NotificationLog,
 };
 
 export function initModels(sequelize: Sequelize): void {
@@ -37,6 +41,8 @@ export function initModels(sequelize: Sequelize): void {
   HabitCompletion.initModel(sequelize);
   AiSuggestion.initModel(sequelize);
   Embedding.initModel(sequelize);
+  NotificationPreference.initModel(sequelize);
+  NotificationLog.initModel(sequelize);
 
   // Auth associations
   User.hasMany(Session, { foreignKey: "userId", as: "sessions" });
@@ -109,4 +115,14 @@ export function initModels(sequelize: Sequelize): void {
     foreignKey: "acceptedHabitId",
     as: "acceptedFromSuggestions",
   });
+
+  // Notifications
+  User.hasOne(NotificationPreference, {
+    foreignKey: "userId",
+    as: "notificationPreference",
+  });
+  NotificationPreference.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+  User.hasMany(NotificationLog, { foreignKey: "userId", as: "notificationLogs" });
+  NotificationLog.belongsTo(User, { foreignKey: "userId", as: "user" });
 }
