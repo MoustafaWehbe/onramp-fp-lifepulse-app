@@ -1,0 +1,1 @@
+export { CoachClientRequest } from "@starter-kit/shared";

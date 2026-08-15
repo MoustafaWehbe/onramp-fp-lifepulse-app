@@ -10,6 +10,8 @@ import { Habit } from "./Habit";
 import { HabitCompletion } from "./HabitCompletion";
 import { AiSuggestion } from "./AiSuggestion";
 import { Embedding } from "./Embedding";
+import { CoachClientRequest } from "./CoachClientRequest";
+import { CoachFeedback } from "./CoachFeedback";
 
 export {
   User,
@@ -23,6 +25,8 @@ export {
   HabitCompletion,
   AiSuggestion,
   Embedding,
+  CoachClientRequest,
+  CoachFeedback,
 };
 
 export function initModels(sequelize: Sequelize): void {
@@ -37,6 +41,8 @@ export function initModels(sequelize: Sequelize): void {
   HabitCompletion.initModel(sequelize);
   AiSuggestion.initModel(sequelize);
   Embedding.initModel(sequelize);
+  CoachClientRequest.initModel(sequelize);
+  CoachFeedback.initModel(sequelize);
 
   // Auth associations
   User.hasMany(Session, { foreignKey: "userId", as: "sessions" });
@@ -109,4 +115,29 @@ export function initModels(sequelize: Sequelize): void {
     foreignKey: "acceptedHabitId",
     as: "acceptedFromSuggestions",
   });
+
+
+   User.hasMany(CoachClientRequest, {
+     foreignKey: "requesterId",
+     as: "sentCoachRequests",
+   });
+   CoachClientRequest.belongsTo(User, {
+     foreignKey: "requesterId",
+     as: "requester",
+   });
+   User.hasMany(CoachClientRequest, {
+     foreignKey: "coachId",
+     as: "receivedCoachRequests",
+   });
+   CoachClientRequest.belongsTo(User, { foreignKey: "coachId", as: "coach" });
+
+   CoachClientRequest.hasMany(CoachFeedback, {
+     foreignKey: "coachRequestId",
+     as: "feedback",
+   });
+   CoachFeedback.belongsTo(CoachClientRequest, {
+     foreignKey: "coachRequestId",
+     as: "coachRequest",
+   });
+   CoachFeedback.belongsTo(User, { foreignKey: "coachId", as: "coach" });
 }
