@@ -1,14 +1,30 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as random from "@pulumi/random";
-import { hasOpenaiApiKey, openaiApiKey, ssmPrefix } from "./config";
+import {
+  emailFrom,
+  emailProvider,
+  hasOpenaiApiKey,
+  hasResendApiKey,
+  openaiApiKey,
+  reengagementEnabled,
+  resendApiKey,
+  ssmPrefix,
+} from "./config";
 
 export interface AppSecrets {
   /** Shared secret CloudFront sends as x-origin-secret; the API rejects requests without it. */
   originSecret: pulumi.Output<string>;
   /** Postgres superuser password. Only applied on first DB init — see note below. */
   postgresPassword: pulumi.Output<string>;
-  parameterArns: pulumi.Output<string>[];
+  /**
+   * The parameter resources themselves, not just their ARNs — scripts/deploy.sh
+   * reads these at deploy time, so the deploy command has to be sequenced after
+   * them with an explicit dependsOn. Nothing else in the graph provides that
+   * edge: the instance role grants `${ssmPrefix}/*` by wildcard, so it never
+   * references an individual parameter.
+   */
+  parameters: aws.ssm.Parameter[];
 }
 
 /**
@@ -47,11 +63,29 @@ export function createSecrets(): AppSecrets {
       value,
     });
 
+  // Plain String rather than SecureString: these three are configuration, not
+  // credentials, and keeping them readable makes `aws ssm get-parameter` on the
+  // box a useful diagnostic. They always have a non-empty default in config.ts,
+  // so they are always created and deploy.sh can treat them as required.
+  const putPlain = (name: string, key: string, value: pulumi.Input<string>) =>
+    new aws.ssm.Parameter(name, {
+      name: `${ssmPrefix}/${key}`,
+      type: aws.ssm.ParameterType.String,
+      value,
+    });
+
   const params = [
     put("param-jwt-secret", "JWT_SECRET", jwtSecret),
     put("param-jwt-refresh-secret", "JWT_REFRESH_SECRET", jwtRefreshSecret),
     put("param-origin-secret", "ORIGIN_SECRET", originSecret),
     put("param-postgres-password", "POSTGRES_PASSWORD", postgresPassword),
+    putPlain("param-email-provider", "EMAIL_PROVIDER", emailProvider),
+    putPlain("param-email-from", "EMAIL_FROM", emailFrom),
+    putPlain(
+      "param-reengagement-enabled",
+      "REENGAGEMENT_ENABLED",
+      reengagementEnabled,
+    ),
   ];
 
   // Only created when actually configured. SSM rejects an empty parameter value
@@ -73,9 +107,21 @@ export function createSecrets(): AppSecrets {
     );
   }
 
+  // Same conditional treatment as the OpenAI key, for the same reason. Absent
+  // means the app falls back to the console provider rather than sending.
+  if (hasResendApiKey) {
+    params.push(
+      put(
+        "param-resend-api-key",
+        "RESEND_API_KEY",
+        resendApiKey as pulumi.Output<string>,
+      ),
+    );
+  }
+
   return {
     originSecret,
     postgresPassword,
-    parameterArns: params.map((p) => p.arn),
+    parameters: params,
   };
 }

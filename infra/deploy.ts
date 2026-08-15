@@ -90,6 +90,13 @@ export interface DeployArgs {
   bucketName: pulumi.Input<string>;
   distributionId: pulumi.Input<string>;
   instanceId: pulumi.Input<string>;
+  /**
+   * Every SSM parameter scripts/deploy.sh reads. Passed purely for ordering:
+   * the deploy command reads them over the AWS API rather than through Pulumi,
+   * so without an explicit dependsOn they are unrelated nodes in the graph and
+   * a newly added parameter can be created *after* the deploy that needs it.
+   */
+  parameters: pulumi.Resource[];
 }
 
 export function createDeployments(args: DeployArgs): void {
@@ -249,13 +256,17 @@ done
 echo "timed out waiting for SSM command $CID" >&2
 exit 1`;
 
-  new local.Command("deploy-api", {
-    environment: cliEnv(),
-    // The instance pulls this exact commit from GitHub, so the SHA must already
-    // be pushed. If it is not, `git reset --hard` fails and the deploy errors out
-    // rather than silently shipping something else.
-    triggers: [sha, args.instanceId],
-    create: apiCommand,
-    update: apiCommand,
-  });
+  new local.Command(
+    "deploy-api",
+    {
+      environment: cliEnv(),
+      // The instance pulls this exact commit from GitHub, so the SHA must already
+      // be pushed. If it is not, `git reset --hard` fails and the deploy errors out
+      // rather than silently shipping something else.
+      triggers: [sha, args.instanceId],
+      create: apiCommand,
+      update: apiCommand,
+    },
+    { dependsOn: args.parameters },
+  );
 }

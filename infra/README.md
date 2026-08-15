@@ -65,9 +65,28 @@ pulumi config set onramp-fp-lifepulse-app:instanceType t3.small          # bigge
 pulumi config set onramp-fp-lifepulse-app:repoBranch my-branch
 ```
 
+Email, for the habit reminders and the daily re-engagement sweep. Without
+`resendApiKey` the app falls back to the console provider — messages are logged
+on the box and nothing is sent, which is the default:
+
+```bash
+pulumi config set --secret onramp-fp-lifepulse-app:resendApiKey re_...
+pulumi config set onramp-fp-lifepulse-app:emailProvider resend           # or brevo / console
+pulumi config set onramp-fp-lifepulse-app:emailFrom "Kultivar <onboarding@resend.dev>"
+pulumi config set onramp-fp-lifepulse-app:reengagementEnabled false      # stop the daily sweep
+```
+
+Note that Resend will only deliver to your own account address until you verify
+a sending domain, so `onboarding@resend.dev` is fine for a smoke test and not
+for real users.
+
 Everything else — JWT secrets, the Postgres password, the CloudFront origin
 shared secret — is generated automatically and stored as SSM SecureStrings under
 `/lifepulse/*`. There is nothing to set by hand and nothing to leak into git.
+
+`APP_URL` is not configurable: it is set to the CloudFront origin at deploy
+time, since links in outbound email have to point at the deployed site rather
+than at the `localhost:5173` the code defaults to.
 
 ## Deploying
 

@@ -68,6 +68,15 @@ POSTGRES_PASSWORD=$(get_param POSTGRES_PASSWORD)
 OPENAI_API_KEY=$(get_param_optional OPENAI_API_KEY)
 PUBLIC_ORIGIN=$(get_param PUBLIC_ORIGIN)
 
+# Email. The three non-secret ones always exist — infra/config.ts gives each a
+# non-empty default, so they are unconditionally created as String parameters.
+# The API key follows OPENAI_API_KEY: absent when unconfigured, which makes the
+# app fall back to the console provider instead of sending.
+EMAIL_PROVIDER=$(get_param EMAIL_PROVIDER)
+EMAIL_FROM=$(get_param EMAIL_FROM)
+REENGAGEMENT_ENABLED=$(get_param REENGAGEMENT_ENABLED)
+RESEND_API_KEY=$(get_param_optional RESEND_API_KEY)
+
 DATABASE_URL="postgresql://postgres:$POSTGRES_PASSWORD@localhost:5433/starter_kit"
 
 umask 077
@@ -78,6 +87,10 @@ PORT=3000
 # survives instance replacement.
 DATA_DIR=/mnt/data
 CORS_ORIGIN=$PUBLIC_ORIGIN
+# Base for links inside outbound email (unsubscribe, deep links) and for the
+# links notifications.controller.ts builds. Both default to localhost:5173 when
+# unset, which would ship dead links to real inboxes now that email is enabled.
+APP_URL=$PUBLIC_ORIGIN
 DATABASE_URL=$DATABASE_URL
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=$POSTGRES_PASSWORD
@@ -91,6 +104,13 @@ JWT_REFRESH_SECRET=$JWT_REFRESH_SECRET
 JWT_REFRESH_EXPIRES_IN=7d
 ORIGIN_SECRET=$ORIGIN_SECRET
 OPENAI_API_KEY=$OPENAI_API_KEY
+EMAIL_PROVIDER=$EMAIL_PROVIDER
+# Unquoted despite the space and angle brackets: systemd EnvironmentFile takes
+# the rest of the line verbatim, and dotenv does the same, so quoting here would
+# only risk the quotes ending up inside the address.
+EMAIL_FROM=$EMAIL_FROM
+RESEND_API_KEY=$RESEND_API_KEY
+REENGAGEMENT_ENABLED=$REENGAGEMENT_ENABLED
 ENV
 chmod 600 "$ENV_FILE"
 

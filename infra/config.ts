@@ -57,6 +57,35 @@ export const openaiApiKey = config.getSecret("openaiApiKey");
  */
 export const hasOpenaiApiKey = config.get("openaiApiKey") !== undefined;
 
+/**
+ * Email delivery — "resend" | "brevo" | "console".
+ *
+ * Defaults to "console" (emails are logged, never sent) rather than to the empty
+ * string that .env.example uses for auto-detection: SSM rejects empty parameter
+ * values, and "console" is the correct behaviour for a stack that has no API key
+ * configured anyway. packages/shared/email/client.ts special-cases "console", so
+ * this default also avoids the misconfiguration warning it logs otherwise.
+ */
+export const emailProvider = config.get("emailProvider") || "console";
+
+/**
+ * Envelope From. Must stay non-empty: the app reads it with `?? DEFAULT_FROM`,
+ * which does NOT fall back on an empty string — it would send with a blank From
+ * and the provider would reject every message.
+ */
+export const emailFrom =
+  config.get("emailFrom") || "Kultivar <onboarding@resend.dev>";
+
+/** Only the literal string "false" disables the daily lapsed-user sweep. */
+export const reengagementEnabled =
+  config.get("reengagementEnabled") || "true";
+
+/** Required for emailProvider "resend"; without it the app falls back to console. */
+export const resendApiKey = config.getSecret("resendApiKey");
+
+/** Synchronous presence check — same Output caveat as `hasOpenaiApiKey` above. */
+export const hasResendApiKey = config.get("resendApiKey") !== undefined;
+
 /** Prefix for all SSM Parameter Store entries this stack owns. */
 export const ssmPrefix = "/lifepulse";
 

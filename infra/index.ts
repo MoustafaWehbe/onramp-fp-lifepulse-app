@@ -35,9 +35,9 @@ const { bucket, distribution } = createCdn({
 
 const publicOrigin = pulumi.interpolate`https://${distribution.domainName}`;
 
-// Read by scripts/deploy.sh to populate CORS_ORIGIN. Not a secret, but it lives
-// under the same prefix so the instance role's single grant covers it.
-new aws.ssm.Parameter("param-public-origin", {
+// Read by scripts/deploy.sh to populate CORS_ORIGIN and APP_URL. Not a secret,
+// but it lives under the same prefix so the instance role's single grant covers it.
+const publicOriginParam = new aws.ssm.Parameter("param-public-origin", {
   name: `${ssmPrefix}/PUBLIC_ORIGIN`,
   type: aws.ssm.ParameterType.String,
   value: publicOrigin,
@@ -47,6 +47,7 @@ createDeployments({
   bucketName: bucket.bucket,
   distributionId: distribution.id,
   instanceId: instance.id,
+  parameters: [...secrets.parameters, publicOriginParam],
 });
 
 export const url = publicOrigin;
