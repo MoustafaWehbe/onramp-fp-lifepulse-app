@@ -13,6 +13,23 @@ export function todayInTimeZone(timeZone: string): string {
   }).format(new Date());
 }
 
+/** Returns "HH:mm" (24-hour) for "now" as seen from the given IANA timezone. */
+export function localTimeInTimeZone(timeZone: string, at: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(at);
+}
+
+/** Whole days between two ISO "YYYY-MM-DD" dates. Negative if `to` precedes `from`. */
+export function daysBetweenIsoDates(from: string, to: string): number {
+  const start = Date.parse(`${from}T00:00:00Z`);
+  const end = Date.parse(`${to}T00:00:00Z`);
+  return Math.round((end - start) / 86_400_000);
+}
+
 /** ISO date (YYYY-MM-DD) `days` days before "now" in the given IANA timezone. */
 export function daysAgoInTimeZone(days: number, timeZone: string): string {
   const parts = new Intl.DateTimeFormat("en-CA", {

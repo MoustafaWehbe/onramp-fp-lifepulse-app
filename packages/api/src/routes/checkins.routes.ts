@@ -15,6 +15,7 @@ router.use(authenticate);
 
 router.get("/", validate(listCheckInsQuerySchema, "query"), checkInsController.list);
 router.get("/today", checkInsController.today);
+router.get("/activity", checkInsController.activity);
 router.post("/", validate(createCheckInSchema), checkInsController.create);
 router.delete(
   "/:id",

@@ -3,5 +3,12 @@
   "compilerOptions": {
     "declaration": true,
     "sourceMap": true
-  }
+  },
+  // Consume @starter-kit/shared through its built declarations rather than its
+  // sources, which would otherwise land outside this project's rootDir.
+  "references": [{ "path": "../shared/tsconfig.build.json" }],
+  // A local-only preview tool that reads the web app's popup copy, so it
+  // reaches outside this package's rootDir. It never ships, and tsx runs it
+  // straight from source — every other script stays in the typechecked build.
+  "exclude": ["node_modules", "dist", "src/scripts/preview-messages.ts"]
 }

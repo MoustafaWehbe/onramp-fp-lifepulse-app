@@ -4,15 +4,17 @@ import {
   CheckCircle2,
   BarChart3,
   User,
-  Sparkles,
   LogOut,
 } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useAreas } from "@/hooks/useAreas";
-import { areaTokens } from "@/lib/area-colors";
+import { tokensFor } from "@/lib/area-colors";
 import { AreaDot } from "@/components/area/area-dot";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useWelcomeBack } from "@/hooks/useWelcomeBack";
+import { WelcomeBack } from "@/components/welcome-back";
+import { ReminderPopup } from "@/components/reminder-popup";
 import type { ReactNode } from "react";
 
 const nav = [
@@ -27,6 +29,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: areas = [] } = useAreas();
   const { user, logout } = useAuth();
   const { data: liveProfile } = useProfile();
+  // Lives here rather than on a single page so the greeting reaches whichever
+  // screen the user lands on, and a due reminder interrupts wherever they are.
+  const welcomeBack = useWelcomeBack();
 
   const displayName = user?.name ?? liveProfile?.name;
   const displayJob = liveProfile?.profession;
@@ -91,7 +96,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ul className="space-y-0.5">
               {areas.map((a) => {
                 const active = pathname === `/areas/${a.id}`;
-                const t = areaTokens[a.color];
+                const t = tokensFor(a.color);
                 return (
                   <li key={a.id}>
                     <Link
@@ -174,7 +179,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <main id="main-content" className="lg:ml-60" tabIndex={-1}>
-        <div className="mx-auto max-w-6xl px-6 py-10 lg:py-12">{children}</div>
+        <div className="mx-auto max-w-6xl px-6 py-10 lg:py-12">
+          <WelcomeBack state={welcomeBack} />
+          {/* Greeting first: stacking both modals on a returning user would bury it. */}
+          {welcomeBack.mode !== "popup" && <ReminderPopup />}
+          {children}
+        </div>
       </main>
     </div>
   );
@@ -210,56 +220,5 @@ export function PageHeader({
       </div>
       {action}
     </header>
-  );
-}
-
-export function AiPanel() {
-  return (
-    <div className="rounded-2xl bg-foreground p-6 text-background">
-      <div className="mb-4 flex items-center gap-2">
-        <div
-          className={`size-1.5 animate-pulse rounded-full ${areaTokens.spirit.bg}`}
-          aria-hidden="true"
-        />
-        <span className="mono text-[10px] font-medium uppercase tracking-widest text-background/60">
-          AI Synthesizer
-        </span>
-      </div>
-      <div className="mb-4 flex items-start gap-3">
-        <Sparkles
-          className={`size-5 shrink-0 ${areaTokens.spirit.text}`}
-          aria-hidden="true"
-        />
-        <div>
-          <h4 className="text-base font-bold">Recommendations coming soon</h4>
-          <p className="mt-1 text-sm text-background/70">
-            Once enabled, Kultivar will suggest 3–5 habits per area based on
-            your profile, goals, stress, and the areas you&apos;ve created.
-          </p>
-        </div>
-      </div>
-      <div className="space-y-2" aria-label="Preview of upcoming AI suggestions">
-        {[
-          { area: "Health", text: "20-20-20 eye breaks during deep work" },
-          { area: "Career", text: "End-of-day shutdown ritual" },
-          { area: "Mind", text: "Two-minute breath reset before meetings" },
-        ].map((s, i) => (
-          <div
-            key={i}
-            className="rounded-lg bg-background/5 p-3 ring-1 ring-background/10"
-          >
-            <div className="mb-1 flex items-center justify-between">
-              <span className="mono text-[10px] uppercase tracking-wider text-background/60">
-                {s.area}
-              </span>
-              <span className="mono text-[10px] text-background/40">
-                preview
-              </span>
-            </div>
-            <p className="text-sm">{s.text}</p>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }

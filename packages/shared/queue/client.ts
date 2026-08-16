@@ -5,6 +5,7 @@ import {
   type EmailJobData,
   type EmbeddingsJobData,
   type HabitReminderJobData,
+  type ReEngagementSweepJobData,
 } from "./types";
 
 let redisConnection: IORedis | null = null;
@@ -39,4 +40,9 @@ export const embeddingsQueue = createQueue<EmbeddingsJobData>(
 // see packages/api/src/lib/habit-reminders.ts for how schedulers are upserted/removed.
 export const remindersQueue = createQueue<HabitReminderJobData>(
   QUEUE_NAMES.REMINDERS,
+);
+// Driven by a single daily Job Scheduler registered at worker startup —
+// see packages/workers/index.ts.
+export const reengagementQueue = createQueue<ReEngagementSweepJobData>(
+  QUEUE_NAMES.REENGAGEMENT,
 );

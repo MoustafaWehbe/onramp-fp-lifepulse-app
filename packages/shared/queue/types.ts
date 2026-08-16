@@ -3,6 +3,7 @@ export const QUEUE_NAMES = {
   EMAIL: "email",
   EMBEDDINGS: "embeddings",
   REMINDERS: "reminders",
+  REENGAGEMENT: "reengagement",
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -13,6 +14,8 @@ export interface EmailJobData {
   subject: string;
   template: string;
   variables?: Record<string, string>;
+  /** Recipient, when known — used to append an unsubscribe link and log delivery. */
+  userId?: string;
 }
 
 export interface EmbeddingsJobData {
@@ -31,7 +34,17 @@ export interface HabitReminderJobData {
   habitId: string;
 }
 
-export type JobData = EmailJobData | EmbeddingsJobData | HabitReminderJobData;
+/** Payload for the daily sweep that looks for lapsed users. See reengagement.job.ts. */
+export interface ReEngagementSweepJobData {
+  /** ISO timestamp the sweep was scheduled for; present only for traceability. */
+  scheduledFor?: string;
+}
+
+export type JobData =
+  | EmailJobData
+  | EmbeddingsJobData
+  | HabitReminderJobData
+  | ReEngagementSweepJobData;
 
 // ─── Job result shapes ─────────────────────────────────────────────────────────
 export interface EmailJobResult {
@@ -44,4 +57,9 @@ export interface EmbeddingsJobResult {
 
 export interface HabitReminderJobResult {
   notified: boolean;
+}
+
+export interface ReEngagementSweepJobResult {
+  scanned: number;
+  notified: number;
 }

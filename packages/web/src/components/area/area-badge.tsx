@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { areaTokens, type AreaColor } from "@/lib/area-colors";
+import { tokensFor, type AreaColor } from "@/lib/area-colors";
 
 interface AreaBadgeProps {
   color: AreaColor;
@@ -9,7 +9,7 @@ interface AreaBadgeProps {
 }
 
 export function AreaBadge({ color, children, className }: AreaBadgeProps) {
-  const t = areaTokens[color];
+  const t = tokensFor(color);
   return (
     <span
       className={cn(
@@ -37,7 +37,7 @@ export function AreaPct({
     <span
       className={cn(
         "mono text-xs font-medium tabular-nums",
-        areaTokens[color].text,
+        tokensFor(color).text,
         className,
       )}
     >

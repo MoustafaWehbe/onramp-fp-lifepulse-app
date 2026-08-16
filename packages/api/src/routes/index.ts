@@ -8,6 +8,8 @@ import { checkInsRouter } from "./checkins.routes";
 import { adminRouter } from "./admin.routes";
 import { coachesRouter } from "./coaches.routes";
 import { coachRequestsRouter } from "./coach-requests.routes";
+import { aiSuggestionsRouter } from "./ai-suggestions.routes";
+import { notificationsRouter } from "./notifications.routes";
 const router = Router();
 
 router.use("/auth", authRouter);
@@ -19,5 +21,7 @@ router.use("/check-ins", checkInsRouter);
 router.use("/admin", adminRouter);
 router.use("/coaches", coachesRouter);
 router.use("/coach-requests", coachRequestsRouter);
+router.use("/ai/suggestions", aiSuggestionsRouter);
+router.use("/notifications", notificationsRouter);
 
 export { router };

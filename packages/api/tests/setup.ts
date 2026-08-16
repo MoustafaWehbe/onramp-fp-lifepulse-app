@@ -8,6 +8,7 @@ global.console.log = jest.fn();
 process.env.NODE_ENV = "test";
 process.env.JWT_SECRET = "test-jwt-secret";
 process.env.JWT_REFRESH_SECRET = "test-refresh-secret";
-process.env.DATABASE_URL =
-  "postgresql://postgres:postgres@localhost:5432/starter_kit_test";
-process.env.REDIS_URL = "redis://localhost:6379";
+// 5433 matches the port docker-compose publishes; CI overrides both of these.
+process.env.DATABASE_URL ??=
+  "postgresql://postgres:postgres@localhost:5433/starter_kit_test";
+process.env.REDIS_URL ??= "redis://localhost:6379";

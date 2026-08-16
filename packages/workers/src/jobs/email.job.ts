@@ -1,25 +1,40 @@
 import type { Job } from "bullmq";
+import {
+  getOrCreatePreferences,
+  renderTemplate,
+  sendEmail,
+  unsubscribeUrl,
+} from "@starter-kit/shared";
 import type { EmailJobData, EmailJobResult } from "@starter-kit/shared";
 
+/**
+ * Renders the named template and hands it to whichever provider is configured
+ * (see packages/shared/email/client.ts). Transient provider failures throw so
+ * BullMQ's retry policy — 3 attempts with exponential backoff — can handle them.
+ */
 export async function processEmailJob(
   job: Job<EmailJobData, EmailJobResult>,
 ): Promise<EmailJobResult> {
-  const { to, subject, template, variables } = job.data;
+  const { to, subject, template, variables, userId } = job.data;
 
-  console.info(`[email] Sending "${subject}" to ${to} (template: ${template})`);
+  // Only known recipients get an unsubscribe link; anonymous transactional
+  // mail (if any) has nothing to opt out of.
+  let optOutUrl: string | undefined;
+  if (userId) {
+    const preferences = await getOrCreatePreferences(userId);
+    optOutUrl = unsubscribeUrl(preferences.unsubscribeToken);
+  }
 
-  // TODO: integrate with your email provider (Resend, SendGrid, SES, etc.)
-  // Example with Resend:
-  // const resend = new Resend(process.env.RESEND_API_KEY);
-  // const { id } = await resend.emails.send({
-  //   from: 'noreply@yourdomain.com',
-  //   to,
-  //   subject,
-  //   html: renderTemplate(template, variables),
-  // });
+  const rendered = renderTemplate(template, subject, variables ?? {}, optOutUrl);
 
-  // Simulate sending
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  const { messageId } = await sendEmail({
+    to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
 
-  return { messageId: `mock-${Date.now()}` };
+  console.info(`[email] Sent "${rendered.subject}" to ${to} (${messageId})`);
+
+  return { messageId };
 }
