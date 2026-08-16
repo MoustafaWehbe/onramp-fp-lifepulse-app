@@ -7,7 +7,7 @@ import {
   createCoachRequestSchema,
   updateCoachRequestStatusSchema,
 } from "../schemas/coach-requests.schemas";
-
+import { createFeedbackSchema } from "../schemas/coach-feedback.schemas";
 const router = Router();
 
 router.use(authenticate);
@@ -24,5 +24,15 @@ router.patch(
   validate(updateCoachRequestStatusSchema),
   coachRequestsController.updateStatus,
 );
+
+router.get("/:id/client-data", authorize("coach"), coachRequestsController.getClientData);
+ router.post(
+   "/:id/feedback",
+   authorize("coach"),
+   validate(createFeedbackSchema),
+   coachRequestsController.addFeedback,
+ );
+
+ router.get("/:id/feedback", coachRequestsController.listFeedback);
 
 export { router as coachRequestsRouter };
