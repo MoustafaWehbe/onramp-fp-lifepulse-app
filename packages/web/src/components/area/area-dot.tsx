@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { areaTokens, type AreaColor } from "@/lib/area-colors";
+import { tokensFor, type AreaColor } from "@/lib/area-colors";
 
 interface AreaDotProps {
   color: AreaColor;
@@ -9,7 +9,7 @@ interface AreaDotProps {
 export function AreaDot({ color, className }: AreaDotProps) {
   return (
     <span
-      className={cn("rounded-full", areaTokens[color].bg, className)}
+      className={cn("rounded-full", tokensFor(color).bg, className)}
       aria-hidden="true"
     />
   );

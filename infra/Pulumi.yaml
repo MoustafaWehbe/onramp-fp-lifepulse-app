@@ -1,0 +1,3 @@
+name: onramp-fp-lifepulse-app
+runtime: nodejs
+description: Deploy the Lifepulse app on a single AWS EC2 instance with Docker Compose.

@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { habitsService } from "../services/habits.service";
+import { pathParam } from "../lib/request";
 
 export const habitsController = {
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -20,7 +21,7 @@ export const habitsController = {
 
   async get(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const habit = await habitsService.getById(req.user!.userId, req.params.id);
+      const habit = await habitsService.getById(req.user!.userId, pathParam(req, "id"));
       res.json({ data: habit });
     } catch (err) {
       next(err);
@@ -40,7 +41,7 @@ export const habitsController = {
     try {
       const habit = await habitsService.update(
         req.user!.userId,
-        req.params.id,
+        pathParam(req, "id"),
         req.body,
       );
       res.json({ data: habit });
@@ -51,7 +52,7 @@ export const habitsController = {
 
   async remove(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      await habitsService.remove(req.user!.userId, req.params.id);
+      await habitsService.remove(req.user!.userId, pathParam(req, "id"));
       res.status(204).send();
     } catch (err) {
       next(err);
@@ -60,7 +61,7 @@ export const habitsController = {
 
   async archive(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const habit = await habitsService.archive(req.user!.userId, req.params.id);
+      const habit = await habitsService.archive(req.user!.userId, pathParam(req, "id"));
       res.json({ data: habit });
     } catch (err) {
       next(err);
@@ -69,7 +70,7 @@ export const habitsController = {
 
   async restore(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const habit = await habitsService.restore(req.user!.userId, req.params.id);
+      const habit = await habitsService.restore(req.user!.userId, pathParam(req, "id"));
       res.json({ data: habit });
     } catch (err) {
       next(err);

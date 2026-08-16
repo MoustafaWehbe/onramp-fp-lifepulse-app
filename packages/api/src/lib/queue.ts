@@ -1,1 +1,6 @@
-export { emailQueue, embeddingsQueue, remindersQueue } from "@starter-kit/shared";
+export {
+  emailQueue,
+  embeddingsQueue,
+  remindersQueue,
+  reengagementQueue,
+} from "@starter-kit/shared";

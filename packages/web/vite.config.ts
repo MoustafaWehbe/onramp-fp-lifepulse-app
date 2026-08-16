@@ -21,7 +21,35 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
-    sourcemap: true,
+    // The build output is uploaded to a public CloudFront distribution, so
+    // source maps here would publish the entire frontend source. The S3 sync in
+    // infra/deploy.ts also excludes *.map as a second line of defence.
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core framework libs churn far less often than app code — keeping
+          // them in their own chunk means browsers can cache them across
+          // deploys instead of re-downloading on every app-code change.
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-query": ["@tanstack/react-query", "axios"],
+          "vendor-ui": [
+            "@radix-ui/react-alert-dialog",
+            "@radix-ui/react-slot",
+            "lucide-react",
+            "class-variance-authority",
+            "clsx",
+            "tailwind-merge",
+            "sonner",
+          ],
+          // recharts (+ its d3 submodules) is only ever imported by
+          // Progress.tsx, which is already route-split — pulling it into its
+          // own named chunk keeps that split explicit and easy to spot in
+          // build output rather than relying purely on Rollup's inference.
+          "vendor-charts": ["recharts"],
+        },
+      },
+    },
   },
   test: {
     globals: true,

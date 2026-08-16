@@ -12,6 +12,8 @@ import { AiSuggestion } from "./AiSuggestion";
 import { Embedding } from "./Embedding";
 import { CoachClientRequest } from "./CoachClientRequest";
 import { CoachFeedback } from "./CoachFeedback";
+import { NotificationPreference } from "./NotificationPreference";
+import { NotificationLog } from "./NotificationLog";
 
 export {
   User,
@@ -27,6 +29,8 @@ export {
   Embedding,
   CoachClientRequest,
   CoachFeedback,
+  NotificationPreference,
+  NotificationLog,
 };
 
 export function initModels(sequelize: Sequelize): void {
@@ -43,6 +47,8 @@ export function initModels(sequelize: Sequelize): void {
   Embedding.initModel(sequelize);
   CoachClientRequest.initModel(sequelize);
   CoachFeedback.initModel(sequelize);
+  NotificationPreference.initModel(sequelize);
+  NotificationLog.initModel(sequelize);
 
   // Auth associations
   User.hasMany(Session, { foreignKey: "userId", as: "sessions" });
@@ -140,4 +146,13 @@ export function initModels(sequelize: Sequelize): void {
      as: "coachRequest",
    });
    CoachFeedback.belongsTo(User, { foreignKey: "coachId", as: "coach" });
+  // Notifications
+  User.hasOne(NotificationPreference, {
+    foreignKey: "userId",
+    as: "notificationPreference",
+  });
+  NotificationPreference.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+  User.hasMany(NotificationLog, { foreignKey: "userId", as: "notificationLogs" });
+  NotificationLog.belongsTo(User, { foreignKey: "userId", as: "user" });
 }
