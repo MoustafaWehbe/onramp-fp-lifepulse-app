@@ -5,9 +5,10 @@ import { cn } from "@/lib/utils";
 import { AreaDot } from "@/components/area/area-dot";
 import { daysAgoStr, todayStr } from "@/lib/store";
 import { useAreas } from "@/hooks/useAreas";
-import { useHabits } from "@/hooks/useHabits";
-import { useCheckIns, isChecked } from "@/hooks/useCheckIns";
+import { useHabits, type Frequency, type Habit } from "@/hooks/useHabits";
+import { useCheckInActivity, useCheckIns, isChecked } from "@/hooks/useCheckIns";
 import { areaMix, tokensFor } from "@/lib/area-colors";
+import { habitCompletion, habitsCompletion } from "@/lib/habit-schedule";
 import { Card } from "@/components/ui/card";
 import {
   LineChart,
@@ -20,9 +21,40 @@ import {
 } from "recharts";
 import { Flame, Calendar, Target } from "lucide-react";
 
+const FREQUENCY_LABEL: Record<Frequency, string> = {
+  daily: "daily",
+  weekdays: "weekdays",
+  "5x": "5×/wk",
+  "3x": "3×/wk",
+  weekly: "weekly",
+};
+
+interface WindowDay {
+  date: string;
+  label: string;
+}
+
+function buildWindow(count: number, endOffset: number): WindowDay[] {
+  const arr: WindowDay[] = [];
+  for (let i = count - 1; i >= 0; i--) {
+    const offset = endOffset + i;
+    const d = new Date();
+    d.setDate(d.getDate() - offset);
+    arr.push({
+      date: daysAgoStr(offset),
+      label: d.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      }),
+    });
+  }
+  return arr;
+}
+
 export function ProgressPage() {
   const { data: habits = [] } = useHabits();
   const { data: areas = [] } = useAreas();
+  const { data: activity } = useCheckInActivity();
   const [windowDays, setWindowDays] = useState<7 | 14 | 30>(14);
 
   const checkInRange = useMemo(
@@ -31,21 +63,16 @@ export function ProgressPage() {
   );
   const { data: checkins = [] } = useCheckIns(checkInRange);
 
-  const days = useMemo(() => {
-    const arr: { date: string; label: string }[] = [];
-    for (let i = windowDays - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      arr.push({
-        date: daysAgoStr(i),
-        label: d.toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-        }),
-      });
-    }
-    return arr;
-  }, [windowDays]);
+  const days = useMemo(() => buildWindow(windowDays, 0), [windowDays]);
+  const previousDays = useMemo(
+    () => buildWindow(windowDays, windowDays),
+    [windowDays],
+  );
+  const dateKeys = useMemo(() => days.map((d) => d.date), [days]);
+  const previousDateKeys = useMemo(
+    () => previousDays.map((d) => d.date),
+    [previousDays],
+  );
 
   const chartData = useMemo(() => {
     return days.map((d) => {
@@ -65,16 +92,24 @@ export function ProgressPage() {
     });
   }, [days, areas, habits, checkins]);
 
-  const totalHabits = habits.length;
-  const totalSlots = totalHabits * windowDays;
-  const totalDone = checkins.filter(
-    (c) =>
-      days.some((d) => d.date === c.date) &&
-      habits.some((h) => h.id === c.habitId),
-  ).length;
-  const completion = totalSlots
-    ? Math.round((totalDone / totalSlots) * 100)
-    : 0;
+  const current = useMemo(
+    () => habitsCompletion(habits, dateKeys, checkins),
+    [habits, dateKeys, checkins],
+  );
+  const previous = useMemo(
+    () => habitsCompletion(habits, previousDateKeys, checkins),
+    [habits, previousDateKeys, checkins],
+  );
+  const vsPrevious = useMemo(() => {
+    if (previous.expected <= 0) return null;
+    const windowStart = dateKeys[0];
+    if (!windowStart) return null;
+    const existedBefore = checkins.some(
+      (c) => c.date < windowStart && habits.some((h) => h.id === c.habitId),
+    );
+    if (!existedBefore) return null;
+    return current.pct - previous.pct;
+  }, [previous, current.pct, dateKeys, checkins, habits]);
 
   let streak = 0;
   for (let i = 0; i < 365; i++) {
@@ -82,6 +117,7 @@ export function ProgressPage() {
     if (checkins.some((c) => c.date === ds)) streak++;
     else if (i > 0) break;
   }
+  const bestStreak = Math.max(streak, activity?.longestStreak ?? 0);
 
   return (
     <AppShell>
@@ -111,12 +147,18 @@ export function ProgressPage() {
           label="Current streak"
           value={`${streak}`}
           unit="days"
+          hint={bestStreak > 0 ? `best ${bestStreak}` : undefined}
         />
         <BigStat
           icon={<Target className="size-4" />}
           label={`Last ${windowDays} days`}
-          value={`${completion}%`}
+          value={`${current.pct}%`}
           unit="completion"
+          hint={
+            vsPrevious === null ? undefined : (
+              <VsPrevious delta={vsPrevious} windowDays={windowDays} />
+            )
+          }
         />
         <BigStat
           icon={<Calendar className="size-4" />}
@@ -202,13 +244,7 @@ export function ProgressPage() {
         <div className="grid gap-4 md:grid-cols-2">
           {areas.map((a) => {
             const areaHabits = habits.filter((h) => h.areaId === a.id);
-            const slots = areaHabits.length * windowDays;
-            const done = checkins.filter(
-              (c) =>
-                days.some((d) => d.date === c.date) &&
-                areaHabits.some((h) => h.id === c.habitId),
-            ).length;
-            const pct = slots ? Math.round((done / slots) * 100) : 0;
+            const stats = habitsCompletion(areaHabits, dateKeys, checkins);
             return (
               <Card key={a.id} className="p-5">
                 <div className="mb-4 flex items-center justify-between">
@@ -223,7 +259,11 @@ export function ProgressPage() {
                       {a.name}
                     </span>
                   </div>
-                  <AreaPct value={pct} color={a.color} className="text-[10px]" />
+                  <AreaPct
+                    value={stats.pct}
+                    color={a.color}
+                    className="text-[10px]"
+                  />
                 </div>
                 <div className="mb-4 grid grid-cols-7 gap-1 md:grid-cols-14">
                   {days.map((d) => {
@@ -254,10 +294,25 @@ export function ProgressPage() {
                     );
                   })}
                 </div>
+                {areaHabits.length > 0 && (
+                  <ul className="mb-3 space-y-1.5 border-t border-border pt-3">
+                    {areaHabits.map((h) => (
+                      <HabitRow
+                        key={h.id}
+                        habit={h}
+                        dates={dateKeys}
+                        checkins={checkins}
+                      />
+                    ))}
+                  </ul>
+                )}
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>{areaHabits.length} habits</span>
+                  <span>
+                    {areaHabits.length}{" "}
+                    {areaHabits.length === 1 ? "habit" : "habits"}
+                  </span>
                   <span className="mono">
-                    {done} / {slots} completions
+                    {stats.done} / {stats.expected} completions
                   </span>
                 </div>
               </Card>
@@ -269,16 +324,59 @@ export function ProgressPage() {
   );
 }
 
+function HabitRow({
+  habit,
+  dates,
+  checkins,
+}: {
+  habit: Habit;
+  dates: string[];
+  checkins: { habitId: string; date: string }[];
+}) {
+  const stats = habitCompletion(habit, dates, checkins);
+  return (
+    <li className="flex items-center justify-between gap-3 text-[11px]">
+      <span className="min-w-0 truncate text-foreground">
+        {habit.name}
+        <span className="ml-1.5 text-muted-foreground">
+          {FREQUENCY_LABEL[habit.frequency]}
+        </span>
+      </span>
+      <span className="mono shrink-0 tabular-nums text-muted-foreground">
+        {stats.done} / {stats.expected}
+      </span>
+    </li>
+  );
+}
+
+function VsPrevious({
+  delta,
+  windowDays,
+}: {
+  delta: number;
+  windowDays: number;
+}) {
+  if (delta === 0) return <>same as previous {windowDays}d</>;
+  const sign = delta > 0 ? "↑" : "↓";
+  return (
+    <span className={delta > 0 ? "text-area-health" : "text-destructive"}>
+      {sign} {Math.abs(delta)}% vs previous {windowDays}d
+    </span>
+  );
+}
+
 function BigStat({
   icon,
   label,
   value,
   unit,
+  hint,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   unit: string;
+  hint?: React.ReactNode;
 }) {
   return (
     <Card className="p-6">
@@ -289,6 +387,9 @@ function BigStat({
         <span className="text-4xl font-extrabold tracking-tight">{value}</span>
         <span className="text-xs text-muted-foreground">{unit}</span>
       </div>
+      {hint ? (
+        <p className="mt-2 text-xs text-muted-foreground">{hint}</p>
+      ) : null}
     </Card>
   );
 }
