@@ -10,5 +10,7 @@ export {
   HabitCompletion,
   AiSuggestion,
   Embedding,
+  CoachClientRequest,
+  CoachFeedback,
   NotificationPreference,
 } from "@starter-kit/shared";

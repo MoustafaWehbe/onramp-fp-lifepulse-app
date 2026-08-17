@@ -2,9 +2,11 @@ import { Model, DataTypes, type Sequelize, type Optional } from "sequelize";
 import type {
   BelongsToManyGetAssociationsMixin,
   BelongsToManySetAssociationsMixin,
+  NonAttribute,
 } from "sequelize";
 import type { UserRole } from "../../auth/types";
 import type { Goal } from "./Goal";
+import type { UserProfile } from "./UserProfile";
 
 export interface UserAttributes {
   id: string;
@@ -36,7 +38,8 @@ export class User
   declare readonly updatedAt: Date;
   declare getGoals: BelongsToManyGetAssociationsMixin<Goal>;
   declare setGoals: BelongsToManySetAssociationsMixin<Goal, string>;
-
+  declare profile?: NonAttribute<UserProfile>;
+  
   static initModel(sequelize: Sequelize): typeof User {
     User.init(
       {
@@ -60,7 +63,7 @@ export class User
           allowNull: false,
         },
         role: {
-          type: DataTypes.ENUM("admin", "user"),
+          type: DataTypes.ENUM("admin", "user", "coach"),
           defaultValue: "user",
           allowNull: false,
         },

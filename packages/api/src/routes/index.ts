@@ -5,6 +5,8 @@ import { profileRouter } from "./profile.routes";
 import { goalsRouter } from "./goals.routes";
 import { habitsRouter } from "./habits.routes";
 import { checkInsRouter } from "./checkins.routes";
+import { adminRouter } from "./admin.routes";
+import { coachesRouter } from "./coaches.routes";
 import { aiSuggestionsRouter } from "./ai-suggestions.routes";
 import { notificationsRouter } from "./notifications.routes";
 const router = Router();
@@ -15,6 +17,8 @@ router.use("/profile", profileRouter);
 router.use("/goals", goalsRouter);
 router.use("/habits", habitsRouter);
 router.use("/check-ins", checkInsRouter);
+router.use("/admin", adminRouter);
+router.use("/coaches", coachesRouter);
 router.use("/ai/suggestions", aiSuggestionsRouter);
 router.use("/notifications", notificationsRouter);
 
