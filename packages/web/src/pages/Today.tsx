@@ -4,7 +4,7 @@ import { AreaDot } from "@/components/area/area-dot";
 import { useAreas } from "@/hooks/useAreas";
 import { useHabits } from "@/hooks/useHabits";
 import { useTodayCheckIns, useToggleCheckIn, isChecked } from "@/hooks/useCheckIns";
-import { areaTokens } from "@/lib/area-colors";
+import { tokensFor } from "@/lib/area-colors";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { Check } from "lucide-react";
@@ -79,7 +79,7 @@ export function TodayPage() {
             const areaDone = items.filter((h) =>
               isChecked(checkins, h.id),
             ).length;
-            const t = areaTokens[area.color];
+            const t = tokensFor(area.color);
             return (
               <section key={area.id} aria-labelledby={`area-${area.id}-heading`}>
                 <div className="mb-5 flex items-center gap-3">

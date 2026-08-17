@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "typecheck": "tsc",
     "preview": "vite preview",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
-    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "lint": "eslint --config ../../eslint.config.mjs \"src/**/*.{ts,tsx}\"",
     "clean": "rm -rf dist",
     "gen:api-types": "openapi-typescript ../api/openapi.yaml -o src/lib/api-types.ts"
   },

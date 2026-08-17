@@ -8,11 +8,12 @@
     "build": "tsc --project tsconfig.build.json",
     "start": "node dist/server.js",
     "test": "jest --config jest.config.js --coverage --passWithNoTests",
-    "lint": "eslint 'src/**/*.ts' 'app.ts' 'server.ts'",
+    "lint": "eslint --config ../../eslint.config.mjs \"src/**/*.ts\" app.ts server.ts",
     "clean": "rm -rf dist",
     "db:migrate": "sequelize-cli db:migrate",
     "db:migrate:undo": "sequelize-cli db:migrate:undo",
-    "db:seed": "sequelize-cli db:seed:all"
+    "db:seed": "sequelize-cli db:seed:all",
+    "db:seed:reference": "sequelize-cli db:seed --seed 20260105000000-seed-goals.js"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^7.3.4",
@@ -44,6 +45,7 @@
     "@types/supertest": "^6.0.0",
     "@types/swagger-ui-express": "^4.1.8",
     "jest": "^29.7.0",
+    "sequelize-cli": "^6.6.2",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.0",
     "tsx": "^4.19.0",

@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { checkInsService } from "../services/checkins.service";
+import { pathParam } from "../lib/request";
 
 /** Browser-resolved IANA timezone sent by the frontend, used as a fallback
  * "today" boundary for habits that don't have their own timezone set. */
@@ -36,6 +37,18 @@ export const checkInsController = {
     }
   },
 
+  async activity(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const activity = await checkInsService.activity(
+        req.user!.userId,
+        clientTimezone(req),
+      );
+      res.json({ data: activity });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { checkIn, created } = await checkInsService.create(
@@ -51,7 +64,7 @@ export const checkInsController = {
 
   async remove(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      await checkInsService.remove(req.user!.userId, req.params.id);
+      await checkInsService.remove(req.user!.userId, pathParam(req, "id"));
       res.status(204).send();
     } catch (err) {
       next(err);

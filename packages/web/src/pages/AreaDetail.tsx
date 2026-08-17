@@ -16,8 +16,9 @@ import {
   useToggleCheckIn,
   isChecked,
 } from "@/hooks/useCheckIns";
-import { areaStyle, areaTokens } from "@/lib/area-colors";
+import { areaStyle, tokensFor } from "@/lib/area-colors";
 import { cn } from "@/lib/utils";
+import { HabitReminderEditor } from "@/components/habit-reminder-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,10 +64,11 @@ export function AreaDetail() {
   // How long the habit itself takes to do (e.g. "15" minutes) — shown on the
   // habit card, unrelated to when/whether a reminder fires.
   const [durationMinutes, setDurationMinutes] = useState("");
-  // Reminder is its own opt-in notification time — kept for live-testing the
-  // worker/BullMQ pipeline, not the habit's duration.
+  // Reminder is its own opt-in notification time, unrelated to the habit's duration.
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState("08:00");
+  // Habit whose reminder editor is expanded, if any. Only one at a time.
+  const [editingReminderFor, setEditingReminderFor] = useState<string | null>(null);
 
   if (areasLoading) {
     return (
@@ -111,7 +113,7 @@ export function AreaDetail() {
     ? Math.round((done / areaHabits.length) * 100)
     : 0;
 
-  const t = areaTokens[area.color];
+  const t = tokensFor(area.color);
 
   const nameError = touched && !name.trim() ? "Habit name is required." : "";
   const needsDayPicker = freq === "3x" || freq === "5x" || freq === "weekly";
@@ -248,110 +250,140 @@ export function AreaDetail() {
                 const isDone = isChecked(checkins, h.id);
                 return (
                   <li key={h.id}>
-                    <Card className="flex items-center justify-between p-4">
-                      <div className="flex items-center gap-4">
-                        <button
-                          type="button"
-                          role="checkbox"
-                          aria-checked={isDone}
-                          aria-label={`Toggle ${h.name}`}
-                          disabled={toggleCheckIn.isPending}
-                          onClick={() =>
-                            toggleCheckIn.mutate(
-                              { habitId: h.id },
-                              {
-                                onError: () =>
-                                  toast.error(
-                                    "Couldn't update check-in. Please try again.",
-                                  ),
-                              },
-                            )
-                          }
-                          className={cn(
-                            "grid size-6 shrink-0 place-items-center rounded-md transition-colors",
-                            isDone
-                              ? cn(t.bg, "text-background")
-                              : "ring-2 ring-border hover:ring-foreground/40",
-                          )}
-                        >
-                          {isDone && (
-                            <Check
-                              className="size-3.5"
-                              strokeWidth={3}
-                              aria-hidden="true"
-                            />
-                          )}
-                        </button>
-                        <div>
-                          <p
-                            className={`text-sm font-medium ${isDone ? "text-muted-foreground line-through" : ""}`}
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            role="checkbox"
+                            aria-checked={isDone}
+                            aria-label={`Toggle ${h.name}`}
+                            disabled={toggleCheckIn.isPending}
+                            onClick={() =>
+                              toggleCheckIn.mutate(
+                                { habitId: h.id },
+                                {
+                                  onError: () =>
+                                    toast.error(
+                                      "Couldn't update check-in. Please try again.",
+                                    ),
+                                },
+                              )
+                            }
+                            className={cn(
+                              "grid size-6 shrink-0 place-items-center rounded-md transition-colors",
+                              isDone
+                                ? cn(t.bg, "text-background")
+                                : "ring-2 ring-border hover:ring-foreground/40",
+                            )}
                           >
-                            {h.name}
-                          </p>
-                          {h.notes && (
-                            <p className="mt-0.5 text-xs text-muted-foreground">
-                              {h.notes}
-                            </p>
-                          )}
-                          {(h.durationMinutes || h.reminderEnabled) && (
-                            <p className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
-                              {h.durationMinutes && (
-                                <span className="flex items-center gap-1">
-                                  <Clock
-                                    className="size-3"
-                                    aria-hidden="true"
-                                  />
-                                  {h.durationMinutes} min
-                                </span>
-                              )}
-                              {h.reminderEnabled && h.reminderTime && (
-                                <span className="flex items-center gap-1">
-                                  <Bell
-                                    className="size-3"
-                                    aria-hidden="true"
-                                  />
-                                  {h.reminderTime}
-                                </span>
-                              )}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                          {h.frequency}
-                        </span>
-                        <ConfirmDialog
-                          title={`Delete "${h.name}"?`}
-                          description="This removes the habit and its check-in history."
-                          confirmLabel="Delete habit"
-                          destructive
-                          onConfirm={() => {
-                            deleteHabit.mutate(h.id, {
-                              onSuccess: () => toast("Habit removed"),
-                              onError: () =>
-                                toast.error(
-                                  "Couldn't delete the habit. Please try again.",
-                                ),
-                            });
-                          }}
-                          trigger={
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Delete ${h.name}`}
-                              disabled={deleteHabit.isPending}
-                              className="size-7 text-muted-foreground hover:text-destructive"
-                            >
-                              <Trash2
+                            {isDone && (
+                              <Check
                                 className="size-3.5"
+                                strokeWidth={3}
                                 aria-hidden="true"
                               />
-                            </Button>
-                          }
-                        />
+                            )}
+                          </button>
+                          <div>
+                            <p
+                              className={`text-sm font-medium ${isDone ? "text-muted-foreground line-through" : ""}`}
+                            >
+                              {h.name}
+                            </p>
+                            {h.notes && (
+                              <p className="mt-0.5 text-xs text-muted-foreground">
+                                {h.notes}
+                              </p>
+                            )}
+                            {(h.durationMinutes || h.reminderEnabled) && (
+                              <p className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
+                                {h.durationMinutes && (
+                                  <span className="flex items-center gap-1">
+                                    <Clock
+                                      className="size-3"
+                                      aria-hidden="true"
+                                    />
+                                    {h.durationMinutes} min
+                                  </span>
+                                )}
+                                {h.reminderEnabled && h.reminderTime && (
+                                  <span className="flex items-center gap-1">
+                                    <Bell
+                                      className="size-3"
+                                      aria-hidden="true"
+                                    />
+                                    {h.reminderTime}
+                                  </span>
+                                )}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                            {h.frequency}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Edit reminder for ${h.name}`}
+                            aria-expanded={editingReminderFor === h.id}
+                            onClick={() =>
+                              setEditingReminderFor((cur) =>
+                                cur === h.id ? null : h.id,
+                              )
+                            }
+                            className={cn(
+                              "size-7",
+                              h.reminderEnabled
+                                ? t.text
+                                : "text-muted-foreground hover:text-foreground",
+                            )}
+                          >
+                            <Bell className="size-3.5" aria-hidden="true" />
+                          </Button>
+                          <ConfirmDialog
+                            title={`Delete "${h.name}"?`}
+                            description="This removes the habit and its check-in history."
+                            confirmLabel="Delete habit"
+                            destructive
+                            onConfirm={() => {
+                              deleteHabit.mutate(h.id, {
+                                onSuccess: () => toast("Habit removed"),
+                                onError: () =>
+                                  toast.error(
+                                    "Couldn't delete the habit. Please try again.",
+                                  ),
+                              });
+                            }}
+                            trigger={
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label={`Delete ${h.name}`}
+                                disabled={deleteHabit.isPending}
+                                className="size-7 text-muted-foreground hover:text-destructive"
+                              >
+                                <Trash2
+                                  className="size-3.5"
+                                  aria-hidden="true"
+                                />
+                              </Button>
+                            }
+                          />
+                        </div>
                       </div>
+
+                      {editingReminderFor === h.id && (
+                        <HabitReminderEditor
+                          habit={h}
+                          color={area.color}
+                          onClose={() => setEditingReminderFor(null)}
+                        />
+                      )}
                     </Card>
                   </li>
                 );
@@ -533,8 +565,7 @@ export function AreaDetail() {
                           {needsDayPicker && daysOfWeek.length > 0
                             ? " on the selected days"
                             : " every day"}
-                          , unless you've already checked in. (For
-                          live-testing the reminder pipeline.)
+                          , unless you've already checked in.
                         </p>
                       )}
                     </>
