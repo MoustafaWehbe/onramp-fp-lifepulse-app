@@ -1,14 +1,8 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  useCoaches,
-  useMyCoachProfile,
-  useUpdateMyCoachProfile,
-  useAddMyCredential,
-  useRemoveMyCredential,
-  type MyCoachProfile,
+  useCoaches
 } from "@/hooks/useCoaches";
 import {
   useSentRequests,
