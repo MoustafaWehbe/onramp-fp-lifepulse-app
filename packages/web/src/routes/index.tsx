@@ -3,16 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { GuestRoute } from "./GuestRoute";
-import { Landing } from "../pages/Landing";
-import { Login } from "../pages/auth/Login";
-import { Register } from "../pages/auth/Register";
-import { Dashboard } from "../pages/dashboard/Dashboard";
-import { TodayPage } from "../pages/Today";
-import { ProgressPage } from "../pages/Progress";
-import { ProfilePage } from "../pages/Profile";
-import { Onboarding } from "../pages/Onboarding";
-import { AreaDetail } from "../pages/AreaDetail";
-import { NotFound } from "../pages/NotFound";
+
 import { CoachingPage } from "../pages/Coaching";
 import { CoachProfile } from "../pages/CoachProfile";
 

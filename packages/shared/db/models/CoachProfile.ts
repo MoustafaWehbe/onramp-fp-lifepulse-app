@@ -51,6 +51,7 @@ export class CoachProfile
 {
   declare id: string;
   declare userId: string;
+  declare displayName: string | undefined;
   declare coachingTitle: string | undefined;
   declare bio: string | undefined;
   declare specialties: string[];
