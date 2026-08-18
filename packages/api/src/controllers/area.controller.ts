@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { areaService } from "../services/area.service";
+import { pathParam } from "../lib/request";
 
 export const areaController = {
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -13,7 +14,7 @@ export const areaController = {
 
   async get(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const area = await areaService.getById(req.user!.userId, req.params.id);
+      const area = await areaService.getById(req.user!.userId, pathParam(req, "id"));
       res.json({ data: area });
     } catch (err) {
       next(err);
@@ -33,7 +34,7 @@ export const areaController = {
     try {
       const area = await areaService.update(
         req.user!.userId,
-        req.params.id,
+        pathParam(req, "id"),
         req.body,
       );
       res.json({ data: area });
@@ -44,7 +45,7 @@ export const areaController = {
 
   async remove(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      await areaService.remove(req.user!.userId, req.params.id);
+      await areaService.remove(req.user!.userId, pathParam(req, "id"));
       res.status(204).send();
     } catch (err) {
       next(err);

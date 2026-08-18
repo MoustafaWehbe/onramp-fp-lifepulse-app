@@ -14,9 +14,18 @@ export interface CheckInFilters {
   habitId?: string;
 }
 
+export interface CheckInActivity {
+  lastCheckInDate: string | null;
+  /** Null for users who have never checked in — new, not lapsed. */
+  daysSinceLastCheckIn: number | null;
+  currentStreak: number;
+  longestStreak: number;
+}
+
 export const checkInKeys = {
   all: ["check-ins"] as const,
   today: () => [...checkInKeys.all, "today"] as const,
+  activity: () => [...checkInKeys.all, "activity"] as const,
   list: (filters: CheckInFilters = {}) =>
     [...checkInKeys.all, "list", filters] as const,
 };
@@ -43,6 +52,19 @@ export function useTodayCheckIns() {
   return useQuery({
     queryKey: checkInKeys.today(),
     queryFn: fetchTodayCheckIns,
+  });
+}
+
+/** Lapse and streak summary powering the welcome-back card on Today. */
+export function useCheckInActivity() {
+  return useQuery({
+    queryKey: checkInKeys.activity(),
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: CheckInActivity }>(
+        "/check-ins/activity",
+      );
+      return data.data;
+    },
   });
 }
 

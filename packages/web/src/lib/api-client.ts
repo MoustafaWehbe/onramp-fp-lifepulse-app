@@ -4,6 +4,11 @@ export const apiClient = axios.create({
   baseURL: "/api",
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
+  // Double-submit CSRF: axios copies this cookie into the header on every
+  // request, which a cross-origin page cannot do. The API rejects state-changing
+  // requests where the two don't match.
+  xsrfCookieName: "csrfToken",
+  xsrfHeaderName: "x-csrf-token",
 });
 
 // Tells the API the browser's local IANA timezone, so "today" for check-ins

@@ -14,4 +14,5 @@ export {
   CoachFeedback,
   CoachProfile,
   CoachCredential,
+  NotificationPreference,
 } from "@starter-kit/shared";

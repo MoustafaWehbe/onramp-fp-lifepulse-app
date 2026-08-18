@@ -4,6 +4,9 @@
     "declaration": true,
     "sourceMap": true
   },
+  // Consume @starter-kit/shared through its built declarations rather than its
+  // sources, which would otherwise land outside this project's rootDir.
+  "references": [{ "path": "../shared/tsconfig.build.json" }],
   "include": ["src/**/*", "app.ts", "server.ts"],
   "exclude": ["node_modules", "dist", "tests"]
 }

@@ -15,6 +15,8 @@ import { CoachFeedback } from "./CoachFeedback";
 import { CoachProfile } from "./CoachProfile";
 import { CoachCredential } from "./CoachCredential";
 import type { CoachVerificationStatus } from "./CoachProfile";
+import { NotificationPreference } from "./NotificationPreference";
+import { NotificationLog } from "./NotificationLog";
 
 export {
   User,
@@ -32,6 +34,8 @@ export {
   CoachFeedback,
   CoachProfile,
   CoachCredential,
+  NotificationPreference,
+  NotificationLog,
 };
 export type { CoachVerificationStatus };
 export function initModels(sequelize: Sequelize): void {
@@ -50,6 +54,8 @@ export function initModels(sequelize: Sequelize): void {
   CoachFeedback.initModel(sequelize);
   CoachProfile.initModel(sequelize);
   CoachCredential.initModel(sequelize);
+  NotificationPreference.initModel(sequelize);
+  NotificationLog.initModel(sequelize);
 
   // Auth associations
   User.hasMany(Session, { foreignKey: "userId", as: "sessions" });
@@ -167,4 +173,13 @@ export function initModels(sequelize: Sequelize): void {
      as: "coachRequest",
    });
    CoachFeedback.belongsTo(User, { foreignKey: "coachId", as: "coach" });
+  // Notifications
+  User.hasOne(NotificationPreference, {
+    foreignKey: "userId",
+    as: "notificationPreference",
+  });
+  NotificationPreference.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+  User.hasMany(NotificationLog, { foreignKey: "userId", as: "notificationLogs" });
+  NotificationLog.belongsTo(User, { foreignKey: "userId", as: "user" });
 }

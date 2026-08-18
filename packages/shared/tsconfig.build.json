@@ -5,8 +5,22 @@
     "outDir": "./dist",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    // Lets the api and workers projects reference this one, so their builds
+    // consume the emitted .d.ts files instead of pulling these sources into
+    // their own program (which violates their rootDir and scatters .js output
+    // back into this package).
+    "composite": true
   },
-  "include": ["src/**/*", "auth/**/*", "ai/**/*", "queue/**/*", "db/**/*", "utils/**/*"],
+  "include": [
+    "src/**/*",
+    "auth/**/*",
+    "ai/**/*",
+    "email/**/*",
+    "notifications/**/*",
+    "queue/**/*",
+    "db/**/*",
+    "utils/**/*"
+  ],
   "exclude": ["node_modules", "dist"]
 }
