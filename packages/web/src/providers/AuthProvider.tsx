@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { AxiosError } from "axios";
 import { apiClient } from "../lib/api-client";
 import { AuthContext, type AuthUser } from "./auth-context";
-
+import { useQueryClient } from "@tanstack/react-query";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Retries only apply to "couldn't reach the server" failures (no response at
@@ -14,7 +14,7 @@ const RETRY_DELAYS_MS = [300, 800, 1500];
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
+  const queryClient = useQueryClient();
   // Restore session on mount — access token cookie is sent automatically.
   // Tolerates brief backend unavailability (dev server restarts, network
   // blips) instead of bouncing a genuinely logged-in user to /login just
@@ -49,12 +49,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  async function login(email: string, password: string): Promise<void> {
-    const { data } = await apiClient.post<{
-      data: { user: AuthUser };
-    }>("/auth/login", { email, password });
-    setUser(data.data.user);
-  }
+async function login(email: string, password: string): Promise<void> {
+  
+  queryClient.clear();
+
+  const { data } = await apiClient.post<{
+    data: { user: AuthUser };
+  }>("/auth/login", { email, password });
+
+  setUser(data.data.user);
+}
 
   async function register(
     email: string,
@@ -64,13 +68,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await apiClient.post("/auth/register", { email, password, name });
   }
 
-  async function logout(): Promise<void> {
-    try {
-      await apiClient.post("/auth/logout");
-    } finally {
-      setUser(null);
-    }
+async function logout(): Promise<void> {
+  try {
+    await apiClient.post("/auth/logout");
+  } finally {
+    setUser(null);
+    queryClient.clear();
   }
+}
 
   return (
     <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>

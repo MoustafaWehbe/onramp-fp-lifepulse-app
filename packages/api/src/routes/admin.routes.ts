@@ -3,7 +3,11 @@ import { adminController } from "../controllers/admin.controller";
 import { validate } from "../middleware/validate";
 import { authenticate } from "../middleware/authenticate";
 import { authorize } from "../middleware/authorize";
-import { updateUserRoleSchema } from "../schemas/admin.schemas";
+import {
+  updateUserRoleSchema,
+  updateCoachVerificationSchema,
+  updateCredentialVerificationSchema,
+} from "../schemas/admin.schemas";
 
 const router = Router();
 
@@ -15,6 +19,19 @@ router.patch(
   "/users/:id/role",
   validate(updateUserRoleSchema),
   adminController.updateUserRole,
+);
+
+
+router.get("/coaches", adminController.listCoachApplicants);
+router.patch(
+  "/coaches/:id/verification",
+  validate(updateCoachVerificationSchema),
+  adminController.updateCoachVerification,
+);
+router.patch(
+  "/coaches/credentials/:credentialId",
+  validate(updateCredentialVerificationSchema),
+  adminController.updateCredentialVerification,
 );
 
 export { router as adminRouter };

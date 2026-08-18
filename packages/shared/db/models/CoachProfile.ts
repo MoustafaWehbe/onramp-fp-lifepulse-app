@@ -1,0 +1,132 @@
+import {
+  Model,
+  DataTypes,
+  type Sequelize,
+  type Optional,
+  type NonAttribute,
+} from "sequelize";
+
+import type { User } from "./User";
+import type { CoachCredential } from "./CoachCredential";
+
+export type CoachVerificationStatus =
+  | "pending"
+  | "verified"
+  | "rejected";
+
+export interface CoachProfileAttributes {
+  id: string;
+  userId: string;
+  displayName?: string;
+  coachingTitle?: string;
+  bio?: string;
+  specialties: string[];
+  yearsExperience?: number;
+  verificationStatus: CoachVerificationStatus;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+}
+
+export interface CoachProfileCreationAttributes
+  extends Optional<
+    CoachProfileAttributes,
+    | "id"
+    | "displayName"
+    | "coachingTitle"
+    | "bio"
+    | "specialties"
+    | "yearsExperience"
+    | "verificationStatus"
+
+    
+  > {}
+
+export class CoachProfile
+  extends Model<
+    CoachProfileAttributes,
+    CoachProfileCreationAttributes
+  >
+  implements CoachProfileAttributes
+{
+  declare id: string;
+  declare userId: string;
+  declare coachingTitle: string | undefined;
+  declare bio: string | undefined;
+  declare specialties: string[];
+  declare yearsExperience: number | undefined;
+  declare verificationStatus: CoachVerificationStatus;
+
+  declare user?: NonAttribute<User>;
+  declare credentials?: NonAttribute<CoachCredential[]>;
+
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
+
+  static initModel(sequelize: Sequelize): typeof CoachProfile {
+    CoachProfile.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true,
+        },
+
+        userId: {
+          type: DataTypes.UUID,
+          allowNull: false,
+          unique: true,
+          references: {
+            model: "users",
+            key: "id",
+          },
+          onDelete: "CASCADE",
+        },
+
+        displayName: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        },
+
+        coachingTitle: {
+          type: DataTypes.STRING(255),
+          allowNull: true,
+        },
+
+        bio: {
+          type: DataTypes.TEXT,
+          allowNull: true,
+        },
+
+        specialties: {
+          type: DataTypes.JSONB,
+          allowNull: false,
+          defaultValue: [],
+        },
+
+        yearsExperience: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+        },
+
+        verificationStatus: {
+          type: DataTypes.ENUM(
+            "pending",
+            "verified",
+            "rejected",
+          ),
+          allowNull: false,
+          defaultValue: "pending",
+        },
+      },
+      {
+        sequelize,
+        tableName: "coach_profiles",
+        timestamps: true,
+        underscored: true,
+      },
+    );
+
+    return CoachProfile;
+  }
+}

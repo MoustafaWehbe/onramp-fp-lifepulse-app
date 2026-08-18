@@ -11,7 +11,8 @@ import { ProfilePage } from "../pages/Profile";
 import { Onboarding } from "../pages/Onboarding";
 import { AreaDetail } from "../pages/AreaDetail";
 import { NotFound } from "../pages/NotFound";
-
+import { CoachingPage } from "../pages/Coaching";
+import { CoachProfile } from "../pages/CoachProfile";
 export function AppRoutes() {
   return (
     <Routes>
@@ -31,6 +32,8 @@ export function AppRoutes() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/areas/:id" element={<AreaDetail />} />
+        <Route path="/coaching" element={<CoachingPage />} />
+        <Route path="/coaches/:id" element={<CoachProfile />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

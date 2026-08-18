@@ -8,6 +8,7 @@ import { checkInsRouter } from "./checkins.routes";
 import { adminRouter } from "./admin.routes";
 import { coachesRouter } from "./coaches.routes";
 import { coachRequestsRouter } from "./coach-requests.routes";
+
 const router = Router();
 
 router.use("/auth", authRouter);
