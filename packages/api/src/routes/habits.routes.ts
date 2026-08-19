@@ -2,6 +2,7 @@ import { Router } from "express";
 import { habitsController } from "../controllers/habits.controller";
 import { validate } from "../middleware/validate";
 import { authenticate } from "../middleware/authenticate";
+import { authorize } from "../middleware/authorize";
 import {
   createHabitSchema,
   updateHabitSchema,
@@ -11,8 +12,9 @@ import {
 
 const router = Router();
 
-// Every habit route is scoped to the authenticated user.
-router.use(authenticate);
+// Every habit route is scoped to the authenticated user, and to a user account
+// specifically — habits belong to the person being coached, not to their coach.
+router.use(authenticate, authorize("user"));
 
 router.get("/", validate(listHabitsQuerySchema, "query"), habitsController.list);
 router.post("/", validate(createHabitSchema), habitsController.create);

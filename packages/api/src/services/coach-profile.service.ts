@@ -1,7 +1,8 @@
-import { CoachProfile, CoachCredential } from "../models";
+import { CoachProfile, CoachCredential, User } from "../models";
 import { createError } from "../middleware/error-handler";
 
 interface UpdateProfileInput {
+  displayName?: string;
   coachingTitle?: string;
   bio?: string;
   specialties?: string[];
@@ -15,24 +16,36 @@ interface CreateCredentialInput {
 
 export class CoachProfileService {
   /**
-   * Every user promoted to the "coach" role gets a CoachProfile row created
-   * for them by the admin promotion flow (see admin.service.ts). This is a
-   * defensive fallback only — it should never actually need to create one.
+   * Coach accounts get their profile row at registration (see
+   * auth.service.ts#register). Accounts that predate that flow, or that were
+   * created before the coach role existed, are healed here rather than left
+   * with an unusable profile page — there is no admin to fix them by hand.
    */
   private async findOwnProfileOrThrow(userId: string) {
-    const profile = await CoachProfile.findOne({
+    const existing = await CoachProfile.findOne({
       where: { userId },
       include: [{ model: CoachCredential, as: "credentials" }],
     });
 
-    if (!profile) {
-      throw createError(
-        "Coach profile not found. Contact an admin if you believe this is an error.",
-        404,
-      );
+    if (existing) return existing;
+
+    const user = await User.findByPk(userId);
+    if (!user || user.role !== "coach") {
+      throw createError("Coach profile not found", 404);
     }
 
-    return profile;
+    await CoachProfile.findOrCreate({
+      where: { userId },
+      defaults: { userId, displayName: user.name, specialties: [] },
+    });
+
+    const created = await CoachProfile.findOne({
+      where: { userId },
+      include: [{ model: CoachCredential, as: "credentials" }],
+    });
+
+    if (!created) throw createError("Coach profile not found", 404);
+    return created;
   }
 
   async getMyProfile(userId: string) {
@@ -44,22 +57,18 @@ export class CoachProfileService {
 
     await profile.update(input);
 
-    // Editing profile details doesn't require re-verification — the coach's
-    // account-level credibility (verificationStatus) is about their
-    // credentials, not their bio copy. Return the fresh profile.
     return this.findOwnProfileOrThrow(userId);
   }
 
   async addCredential(userId: string, input: CreateCredentialInput) {
     const profile = await this.findOwnProfileOrThrow(userId);
 
+    // Credentials are self-reported and shown to users as such; nothing here
+    // claims they were checked by anyone.
     await CoachCredential.create({
       coachProfileId: profile.id,
       name: input.name,
       issuer: input.issuer,
-      // Self-reported credentials start unverified. An admin confirms them
-      // independently (see admin.service.ts#updateCredentialVerification).
-      verified: false,
     });
 
     return this.findOwnProfileOrThrow(userId);
