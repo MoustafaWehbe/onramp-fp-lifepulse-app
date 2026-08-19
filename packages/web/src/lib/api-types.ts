@@ -13,7 +13,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Register a new user */
+        /**
+         * Register a new user
+         * @description Does not set auth cookies. Call POST /auth/login after registering.
+         */
         post: operations["register"];
         delete?: never;
         options?: never;
@@ -32,7 +35,7 @@ export interface paths {
         put?: never;
         /**
          * Login and receive auth cookies
-         * @description On success, sets two HttpOnly cookies: `accessToken` (15 min) and `refreshToken` (7 days). Include `credentials: "include"` in fetch calls.
+         * @description On success, sets HttpOnly cookies: accessToken (15 min) and refreshToken (7 days). Include credentials on all requests.
          */
         post: operations["login"];
         delete?: never;
@@ -52,7 +55,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh the access token
-         * @description Reads the `refreshToken` cookie and issues new auth cookies.
+         * @description Reads the refreshToken cookie and issues new auth cookies.
          */
         post: operations["refreshToken"];
         delete?: never;
@@ -95,10 +98,498 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get user profile */
+        get: operations["getProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update user profile */
+        patch: operations["updateProfile"];
+        trace?: never;
+    };
+    "/profile/onboarding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Complete onboarding
+         * @description Saves onboarding data and sets onboarded to true.
+         */
+        patch: operations["completeOnboarding"];
+        trace?: never;
+    };
+    "/goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List available goals
+         * @description Returns the full goal catalog. No auth required.
+         */
+        get: operations["listGoals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/areas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List life areas */
+        get: operations["listAreas"];
+        put?: never;
+        /** Create a life area */
+        post: operations["createArea"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/areas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a life area with its habits */
+        get: operations["getArea"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a life area
+         * @description Cascade-deletes all habits and check-ins in this area.
+         */
+        delete: operations["deleteArea"];
+        options?: never;
+        head?: never;
+        /** Update a life area */
+        patch: operations["updateArea"];
+        trace?: never;
+    };
+    "/habits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List habits */
+        get: operations["listHabits"];
+        put?: never;
+        /** Create a habit */
+        post: operations["createHabit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/habits/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a habit */
+        get: operations["getHabit"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a habit
+         * @description Cascade-deletes all check-ins for this habit.
+         */
+        delete: operations["deleteHabit"];
+        options?: never;
+        head?: never;
+        /** Update a habit */
+        patch: operations["updateHabit"];
+        trace?: never;
+    };
+    "/habits/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive a habit
+         * @description Soft-deletes the habit (hidden from default lists, check-in history preserved) and cancels its reminder.
+         */
+        post: operations["archiveHabit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/habits/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore an archived habit
+         * @description Un-archives the habit and re-schedules its reminder if reminderEnabled is true.
+         */
+        post: operations["restoreHabit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/check-ins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List check-ins
+         * @description Returns last 30 days if no date range is provided.
+         */
+        get: operations["listCheckIns"];
+        put?: never;
+        /**
+         * Create a check-in
+         * @description Idempotent — returns 200 if check-in already exists for habitId + date.
+         */
+        post: operations["createCheckIn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/check-ins/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get today's check-ins
+         * @description "Today" is computed per-habit using that habit's own timezone (falling back to the X-Timezone header, then UTC).
+         */
+        get: operations["getTodayCheckIns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/check-ins/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Un-complete a check-in
+         * @description Soft toggle, not a hard delete — marks the check-in as not completed while keeping the row (and its original createdAt) for history. Re-completing the same habit + date later flips it back on rather than creating a duplicate.
+         */
+        delete: operations["deleteCheckIn"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/coaches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List coaches in the directory
+         * @description Every coach account appears here as soon as it is registered. There is no approval queue — credentials are shown to users as self-reported.
+         */
+        get: operations["listCoaches"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/coaches/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the signed-in coach's own profile */
+        get: operations["getMyCoachProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update the signed-in coach's own profile */
+        patch: operations["updateMyCoachProfile"];
+        trace?: never;
+    };
+    "/coaches/me/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a credential to the signed-in coach's profile */
+        post: operations["addCoachCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/coaches/me/credentials/{credentialId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a credential from the signed-in coach's profile */
+        delete: operations["removeCoachCredential"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/coaches/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get one coach's directory listing */
+        get: operations["getCoach"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/coach-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Invite a coach (user only)
+         * @description Sending to a coach who already accepted updates what is shared and leaves the relationship accepted; sending to one who declined puts the request back to pending.
+         */
+        post: operations["createCoachRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/coach-requests/sent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the requests the signed-in user sent */
+        get: operations["listSentCoachRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/coach-requests/received": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the requests the signed-in coach received */
+        get: operations["listReceivedCoachRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/coach-requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * End a coaching relationship (user only)
+         * @description Removes the coach's access immediately and deletes the feedback thread along with it.
+         */
+        delete: operations["revokeCoachRequest"];
+        options?: never;
+        head?: never;
+        /** Accept or decline a request (coach only) */
+        patch: operations["updateCoachRequestStatus"];
+        trace?: never;
+    };
+    "/coach-requests/{id}/sharing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change what is shared with a coach (user only)
+         * @description Takes effect immediately — access is checked when the coach reads.
+         */
+        patch: operations["updateCoachRequestSharing"];
+        trace?: never;
+    };
+    "/coach-requests/{id}/client-data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a client's shared data (coach only)
+         * @description Habits come grouped under the client's own life areas. The 30-day window ends "today" in the caller's timezone.
+         */
+        get: operations["getCoachClientData"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/coach-requests/{id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the feedback thread
+         * @description Readable by both participants.
+         */
+        get: operations["listCoachFeedback"];
+        put?: never;
+        /** Leave a note for a client (coach only) */
+        post: operations["addCoachFeedback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/coach-requests/{id}/habits/{habitId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Adjust a client's habit (coach only, with permission)
+         * @description Requires the client's `editHabits` grant; 403 without it, and the grant can be withdrawn at any moment. Every change that alters something is written into the feedback thread as a `habit_change` entry, so the client is never surprised by an edited plan.
+         */
+        patch: operations["updateClientHabit"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description The `role` picks which product the account gets. A coach is asked for their directory details here, on the same form — `coachingTitle` is required when `role` is `coach`, and the other coach fields are optional. All coach fields are ignored when `role` is `user`. */
         RegisterBody: {
             /**
              * Format: email
@@ -112,6 +603,22 @@ export interface components {
             password: string;
             /** @example Jane Doe */
             name: string;
+            /**
+             * @default user
+             * @enum {string}
+             */
+            role: "user" | "coach";
+            /** @example Certified Life & Habit Coach */
+            coachingTitle?: string;
+            bio?: string;
+            /**
+             * @example [
+             *       "Burnout recovery",
+             *       "Morning routines"
+             *     ]
+             */
+            specialties?: string[];
+            yearsExperience?: number;
         };
         LoginBody: {
             /**
@@ -123,33 +630,405 @@ export interface components {
             password: string;
         };
         User: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: email */
+            email?: string;
+            name?: string;
+            /** @enum {string} */
+            role?: "user" | "coach";
+            emailVerified?: boolean;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        Profile: {
+            name?: string;
+            /** Format: email */
+            readonly email?: string;
+            /** @enum {string|null} */
+            ageRange?: "18-24" | "25-34" | "35-44" | "45-54" | "55+" | null;
+            profession?: string | null;
+            industry?: string | null;
+            /** @enum {string|null} */
+            educationLevel?: "high_school" | "associate" | "bachelor" | "master" | "doctorate" | "other" | null;
+            /** @enum {string|null} */
+            livingSituation?: "apartment" | "house" | "dormitory" | "other" | null;
+            lifestyleTypes?: string[];
+            stressSources?: string[];
+            dailyFreeTime?: number | null;
+            /** @enum {string|null} */
+            energyPattern?: "morning" | "afternoon" | "evening" | null;
+            /** @enum {string|null} */
+            stressBaseline?: "low" | "medium" | "high" | null;
+            /** @enum {string|null} */
+            workloadIntensity?: "low" | "medium" | "high" | null;
+            /** @enum {string|null} */
+            motivationDriver?: "achievement" | "health" | "family" | "financial_freedom" | "other" | null;
+            failureResponse?: string | null;
+            topValues?: string[];
+            identityStatements?: string[];
+            badHabits?: string[];
+            goals?: string[];
+            stressLevel?: number | null;
+            sleepHours?: number | null;
+            onboarded?: boolean;
+        };
+        Goal: {
+            /** @example focus-clarity */
+            slug?: string;
+            /** @example Focus & Clarity */
+            label?: string;
+        };
+        UpdateProfileBody: {
+            name?: string;
+            /** @enum {string} */
+            ageRange?: "18-24" | "25-34" | "35-44" | "45-54" | "55+";
+            profession?: string;
+            industry?: string;
+            /** @enum {string} */
+            educationLevel?: "high_school" | "associate" | "bachelor" | "master" | "doctorate" | "other";
+            /** @enum {string} */
+            livingSituation?: "apartment" | "house" | "dormitory" | "other";
+            lifestyleTypes?: string[];
+            stressSources?: string[];
+            dailyFreeTime?: number;
+            /** @enum {string} */
+            energyPattern?: "morning" | "afternoon" | "evening";
+            /** @enum {string} */
+            stressBaseline?: "low" | "medium" | "high";
+            /** @enum {string} */
+            workloadIntensity?: "low" | "medium" | "high";
+            /** @enum {string} */
+            motivationDriver?: "achievement" | "health" | "family" | "financial_freedom" | "other";
+            failureResponse?: string;
+            topValues?: string[];
+            identityStatements?: string[];
+            badHabits?: string[];
+            goals?: string[];
+            stressLevel?: number;
+            sleepHours?: number;
+        };
+        OnboardingBody: components["schemas"]["UpdateProfileBody"] & Record<string, never>;
+        /** @enum {string} */
+        AreaColor: "health" | "career" | "spirit" | "social" | "learning" | "creative" | "finance" | "family" | "adventure" | "rest";
+        LifeArea: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            color?: components["schemas"]["AreaColor"];
+            description?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        HabitSummary: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            frequency?: components["schemas"]["Frequency"];
+            notes?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        LifeAreaWithHabits: components["schemas"]["LifeArea"] & {
+            habits?: components["schemas"]["HabitSummary"][];
+        };
+        CreateLifeAreaBody: {
+            name: string;
+            color: components["schemas"]["AreaColor"];
+            description?: string;
+        };
+        UpdateLifeAreaBody: {
+            name?: string;
+            color?: components["schemas"]["AreaColor"];
+            description?: string | null;
+        };
+        /** @enum {string} */
+        Frequency: "daily" | "weekdays" | "3x" | "5x" | "weekly";
+        /** @enum {string} */
+        Difficulty: "easy" | "medium" | "hard";
+        Habit: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            areaId?: string;
+            name?: string;
+            frequency?: components["schemas"]["Frequency"];
+            durationMinutes?: number | null;
+            difficulty?: components["schemas"]["Difficulty"] | null;
+            notes?: string | null;
+            /** @description Whether a reminder is scheduled for this habit. */
+            reminderEnabled?: boolean;
+            /**
+             * @description 24-hour local time the reminder fires at. Required when reminderEnabled is true.
+             * @example 07:30
+             */
+            reminderTime?: string | null;
+            /**
+             * @description IANA timezone reminderTime is expressed in. Required when reminderEnabled is true.
+             * @example America/New_York
+             */
+            timezone?: string | null;
+            /**
+             * @description Explicit weekdays (0=Sun..6=Sat) this habit runs on. Only meaningful for "3x"/"5x"/"weekly" frequencies — "daily" and "weekdays" already imply their own days. Null means unspecified, in which case reminders fire every day instead.
+             * @example [
+             *       1,
+             *       3,
+             *       5
+             *     ]
+             */
+            daysOfWeek?: number[] | null;
+            /** Format: date-time */
+            archivedAt?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        CreateHabitBody: {
+            /** Format: uuid */
+            areaId: string;
+            name: string;
+            frequency: components["schemas"]["Frequency"];
+            durationMinutes?: number;
+            difficulty?: components["schemas"]["Difficulty"];
+            notes?: string;
+            /** @default false */
+            reminderEnabled: boolean;
+            /**
+             * @description Required when reminderEnabled is true.
+             * @example 07:30
+             */
+            reminderTime?: string;
+            /**
+             * @description Required when reminderEnabled is true.
+             * @example America/New_York
+             */
+            timezone?: string;
+            /**
+             * @description Explicit weekdays (0=Sun..6=Sat) for "3x"/"5x"/"weekly" frequencies. Omit to fall back to firing reminders every day.
+             * @example [
+             *       1,
+             *       3,
+             *       5
+             *     ]
+             */
+            daysOfWeek?: number[];
+        };
+        UpdateHabitBody: {
+            /** Format: uuid */
+            areaId?: string;
+            name?: string;
+            frequency?: components["schemas"]["Frequency"];
+            durationMinutes?: number | null;
+            difficulty?: components["schemas"]["Difficulty"] | null;
+            notes?: string | null;
+            reminderEnabled?: boolean;
+            /** @example 07:30 */
+            reminderTime?: string | null;
+            /** @example America/New_York */
+            timezone?: string | null;
+            /**
+             * @example [
+             *       1,
+             *       3,
+             *       5
+             *     ]
+             */
+            daysOfWeek?: number[] | null;
+        };
+        CheckIn: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            habitId?: string;
+            /**
+             * Format: date
+             * @example 2024-06-26
+             */
+            date?: string;
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        CreateCheckInBody: {
+            /** Format: uuid */
+            habitId: string;
+            /**
+             * Format: date
+             * @description Optional. Defaults to "today" in the habit's own timezone (falling back to the X-Timezone header, then UTC). Only pass an explicit date when backfilling a past day — future dates are rejected.
+             */
+            date?: string;
+        };
+        /** @description A qualification a coach lists on their own profile. Self-reported — nothing in the product verifies it. */
+        CoachCredential: {
+            /** Format: uuid */
+            id?: string;
+            /** @example ICF Associate Certified Coach */
+            name?: string;
+            /** @example International Coaching Federation */
+            issuer?: string | null;
+        };
+        /** @description A coach's public directory listing. */
+        Coach: {
             /**
              * Format: uuid
-             * @example 123e4567-e89b-12d3-a456-426614174000
+             * @description The coach's user id — this is what you send as `coachId`.
              */
             id?: string;
-            /**
-             * Format: email
-             * @example user@example.com
-             */
-            email?: string;
-            /** @example Jane Doe */
+            /** @description Display name if the coach set one, otherwise their account name. */
             name?: string;
+            displayName?: string | null;
+            coachingTitle?: string | null;
+            bio?: string | null;
+            specialties?: string[];
+            yearsExperience?: number | null;
+            credentials?: components["schemas"]["CoachCredential"][];
+        };
+        /** @description The signed-in coach's own editable profile. */
+        MyCoachProfile: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            userId?: string;
+            displayName?: string | null;
+            coachingTitle?: string | null;
+            bio?: string | null;
+            specialties?: string[];
+            yearsExperience?: number | null;
+            credentials?: components["schemas"]["CoachCredential"][];
+        };
+        UpdateCoachProfileBody: {
+            displayName?: string;
+            coachingTitle?: string;
+            bio?: string;
+            specialties?: string[];
+            yearsExperience?: number;
+        };
+        CreateCredentialBody: {
+            name: string;
+            issuer?: string;
+        };
+        /** @description A user's invitation to a coach, and the permission grant attached to it. The three grant flags are set by the user and can be changed or revoked by them at any time. */
+        CoachRequest: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            requesterId?: string;
+            /** Format: uuid */
+            coachId?: string;
+            /** @enum {string} */
+            status?: "pending" | "accepted" | "declined";
+            shareHabits?: boolean;
+            shareProfile?: boolean;
+            /** @description Whether the coach may adjust this client's habits. Only ever true alongside `shareHabits` — the API refuses a grant to edit habits the coach cannot see. */
+            editHabits?: boolean;
+            /** Format: date-time */
+            createdAt?: string;
+            /** @description Present on requests the signed-in user sent. */
+            coach?: {
+                /** Format: uuid */
+                id?: string;
+                name?: string;
+            };
+            /** @description Present on requests the signed-in coach received. */
+            requester?: {
+                /** Format: uuid */
+                id?: string;
+                name?: string;
+                /** Format: email */
+                email?: string;
+            };
+        };
+        CreateCoachRequestBody: {
+            /** Format: uuid */
+            coachId: string;
+            /** @default false */
+            shareHabits: boolean;
+            /** @default false */
+            shareProfile: boolean;
             /**
-             * @example user
+             * @description Requires `shareHabits`; 422 otherwise.
+             * @default false
+             */
+            editHabits: boolean;
+        };
+        UpdateCoachRequestStatusBody: {
+            /** @enum {string} */
+            status: "accepted" | "declined";
+        };
+        UpdateSharingBody: {
+            shareHabits: boolean;
+            shareProfile: boolean;
+            /** @description Requires `shareHabits`; 422 otherwise. */
+            editHabits: boolean;
+        };
+        /** @description One of the client's habits as their coach sees it. Raw completion dates are returned rather than a percentage so the coach's view scores consistency with the same code the client's own Progress page uses. */
+        ClientHabit: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            areaId?: string;
+            name?: string;
+            frequency?: components["schemas"]["Frequency"];
+            daysOfWeek?: number[] | null;
+            durationMinutes?: number | null;
+            difficulty?: components["schemas"]["Difficulty"];
+            notes?: string | null;
+            /** @description Completed dates inside `windowDates`, ascending. */
+            completionDates?: string[];
+            /** @description Consecutive days, read over a year of history. */
+            currentStreak?: number;
+            /** Format: date */
+            lastCompletedOn?: string | null;
+        };
+        /** @description Only the sections the user granted are present: `areas` requires `shareHabits`, `profile` requires `shareProfile`. */
+        ClientData: {
+            /** @description Whether this coach may PATCH the client's habits. Always present, so the UI can render read-only without a second call. */
+            canEditHabits?: boolean;
+            /** @description The 30 calendar days the coach's view covers, ascending, ending today in the caller's timezone (see the X-Timezone header). */
+            windowDates?: string[];
+            /** @description The client's own life areas, in their own order, each with its habits. */
+            areas?: {
+                /** Format: uuid */
+                id?: string;
+                name?: string;
+                color?: components["schemas"]["AreaColor"];
+                description?: string | null;
+                habits?: components["schemas"]["ClientHabit"][];
+            }[];
+            profile?: components["schemas"]["Profile"];
+        };
+        /** @description The shape of the plan, and nothing else. Reminder settings and the habit's life area are not editable by a coach — those are the client's own; see the schema source for the reasoning. */
+        CoachUpdateHabitBody: {
+            name?: string;
+            frequency?: components["schemas"]["Frequency"];
+            daysOfWeek?: number[] | null;
+            durationMinutes?: number | null;
+            /** @enum {string|null} */
+            difficulty?: "easy" | "medium" | "hard" | null;
+            notes?: string | null;
+        };
+        CoachFeedback: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            coachRequestId?: string;
+            /** Format: uuid */
+            coachId?: string;
+            /**
+             * @description `note` is something the coach wrote. `habit_change` is written by the API itself when a coach edits one of the client's habits, so the client always sees what changed and when.
              * @enum {string}
              */
-            role?: "user" | "admin";
-            /**
-             * Format: date-time
-             * @example 2024-01-01T00:00:00.000Z
-             */
+            kind?: "note" | "habit_change";
+            body?: string;
+            /** Format: date-time */
             createdAt?: string;
-            /**
-             * Format: date-time
-             * @example 2024-01-01T00:00:00.000Z
-             */
-            updatedAt?: string;
+        };
+        CreateFeedbackBody: {
+            body: string;
         };
         ErrorResponse: {
             /** @example Invalid credentials */
@@ -164,7 +1043,7 @@ export interface components {
         ValidationErrorResponse: {
             /** @example Validation failed */
             error?: string;
-            details?: {
+            errors?: {
                 /** @example email */
                 field?: string;
                 /** @example Invalid email address */
@@ -173,7 +1052,10 @@ export interface components {
         };
     };
     responses: never;
-    parameters: never;
+    parameters: {
+        /** @description Caller's IANA timezone (e.g. from Intl.DateTimeFormat().resolvedOptions().timeZone in a browser). Used as a fallback "today" boundary for habits that don't have their own timezone set; a habit's own timezone always wins. Falls back to UTC if omitted entirely. */
+        XTimezone: string;
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;
@@ -240,7 +1122,6 @@ export interface operations {
             /** @description Login successful */
             200: {
                 headers: {
-                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -295,6 +1176,11 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "error": "Missing refresh token"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
@@ -356,6 +1242,1767 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description User profile */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Profile"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileBody"];
+            };
+        };
+        responses: {
+            /** @description Updated profile */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Profile"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+        };
+    };
+    completeOnboarding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingBody"];
+            };
+        };
+        responses: {
+            /** @description Onboarding complete */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Profile"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listGoals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Goal catalog */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Goal"][];
+                    };
+                };
+            };
+        };
+    };
+    listAreas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of life areas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["LifeArea"][];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createArea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLifeAreaBody"];
+            };
+        };
+        responses: {
+            /** @description Life area created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["LifeArea"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+        };
+    };
+    getArea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Life area with habits */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["LifeAreaWithHabits"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Area not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteArea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Area not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateArea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLifeAreaBody"];
+            };
+        };
+        responses: {
+            /** @description Updated life area */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["LifeArea"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Area not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+        };
+    };
+    listHabits: {
+        parameters: {
+            query?: {
+                /** @description Filter by life area */
+                areaId?: string;
+                /** @description Include archived habits. Defaults to false. */
+                includeArchived?: "true" | "false";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of habits */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Habit"][];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createHabit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateHabitBody"];
+            };
+        };
+        responses: {
+            /** @description Habit created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Habit"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Area not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+        };
+    };
+    getHabit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Habit */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Habit"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Habit not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteHabit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Habit not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateHabit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateHabitBody"];
+            };
+        };
+        responses: {
+            /** @description Updated habit */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Habit"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Habit not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+        };
+    };
+    archiveHabit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Archived habit */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Habit"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Habit not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    restoreHabit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Restored habit */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Habit"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Habit not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listCheckIns: {
+        parameters: {
+            query?: {
+                /** @description Start date (inclusive) */
+                from?: string;
+                /** @description End date (inclusive) */
+                to?: string;
+                /** @description Filter by habit */
+                habitId?: string;
+            };
+            header?: {
+                /** @description Caller's IANA timezone (e.g. from Intl.DateTimeFormat().resolvedOptions().timeZone in a browser). Used as a fallback "today" boundary for habits that don't have their own timezone set; a habit's own timezone always wins. Falls back to UTC if omitted entirely. */
+                "X-Timezone"?: components["parameters"]["XTimezone"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of check-ins */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["CheckIn"][];
+                    };
+                };
+            };
+            /** @description Invalid date range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createCheckIn: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Caller's IANA timezone (e.g. from Intl.DateTimeFormat().resolvedOptions().timeZone in a browser). Used as a fallback "today" boundary for habits that don't have their own timezone set; a habit's own timezone always wins. Falls back to UTC if omitted entirely. */
+                "X-Timezone"?: components["parameters"]["XTimezone"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCheckInBody"];
+            };
+        };
+        responses: {
+            /** @description Check-in already existed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["CheckIn"];
+                    };
+                };
+            };
+            /** @description Check-in created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["CheckIn"];
+                    };
+                };
+            };
+            /** @description Future date not allowed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Habit not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+        };
+    };
+    getTodayCheckIns: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Caller's IANA timezone (e.g. from Intl.DateTimeFormat().resolvedOptions().timeZone in a browser). Used as a fallback "today" boundary for habits that don't have their own timezone set; a habit's own timezone always wins. Falls back to UTC if omitted entirely. */
+                "X-Timezone"?: components["parameters"]["XTimezone"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Today's check-ins */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["CheckIn"][];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteCheckIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Un-completed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Check-in not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listCoaches: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Coach directory */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Coach"][];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getMyCoachProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Coach profile */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["MyCoachProfile"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not a coach account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateMyCoachProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCoachProfileBody"];
+            };
+        };
+        responses: {
+            /** @description Updated profile */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["MyCoachProfile"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not a coach account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+        };
+    };
+    addCoachCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCredentialBody"];
+            };
+        };
+        responses: {
+            /** @description Profile with the credential added */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["MyCoachProfile"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not a coach account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+        };
+    };
+    removeCoachCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                credentialId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Profile with the credential removed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["MyCoachProfile"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not a coach account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Credential not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getCoach: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The coach's user id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Coach listing */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Coach"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Coach not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createCoachRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCoachRequestBody"];
+            };
+        };
+        responses: {
+            /** @description Request created or updated */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["CoachRequest"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Coach accounts cannot request coaching */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Coach not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+        };
+    };
+    listSentCoachRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sent requests */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["CoachRequest"][];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listReceivedCoachRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Received requests */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["CoachRequest"][];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not a coach account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    revokeCoachRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not this request's requester */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateCoachRequestStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCoachRequestStatusBody"];
+            };
+        };
+        responses: {
+            /** @description Updated request */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["CoachRequest"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not this request's coach */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Already responded to, or validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+        };
+    };
+    updateCoachRequestSharing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSharingBody"];
+            };
+        };
+        responses: {
+            /** @description Updated request */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["CoachRequest"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not this request's requester */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+        };
+    };
+    getCoachClientData: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Caller's IANA timezone (e.g. from Intl.DateTimeFormat().resolvedOptions().timeZone in a browser). Used as a fallback "today" boundary for habits that don't have their own timezone set; a habit's own timezone always wins. Falls back to UTC if omitted entirely. */
+                "X-Timezone"?: components["parameters"]["XTimezone"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Whatever the client granted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["ClientData"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not this request's coach, or not accepted yet */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listCoachFeedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Feedback entries, oldest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["CoachFeedback"][];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not a participant */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    addCoachFeedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFeedbackBody"];
+            };
+        };
+        responses: {
+            /** @description Feedback created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["CoachFeedback"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not this request's coach, or not accepted yet */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+        };
+    };
+    updateClientHabit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The coaching request id */
+                id: string;
+                habitId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CoachUpdateHabitBody"];
+            };
+        };
+        responses: {
+            /** @description The updated habit */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Habit"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not this request's coach, not accepted, or no edit permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request or habit not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
         };

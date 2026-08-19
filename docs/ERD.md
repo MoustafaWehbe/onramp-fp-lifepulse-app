@@ -47,7 +47,7 @@ erDiagram
         string email UK
         string password_hash
         string name
-        enum role "admin|user"
+        enum role "user|coach"
         boolean email_verified
         timestamp created_at
         timestamp updated_at
@@ -169,7 +169,7 @@ erDiagram
 
 | Table | Purpose | Key constraints |
 |-------|---------|-----------------|
-| `users` | Account + auth identity | `email` unique; `role` enum `admin\|user`; UUID PK via `gen_random_uuid()` |
+| `users` | Account + auth identity | `email` unique; `role` enum `user\|coach`; UUID PK via `gen_random_uuid()` |
 | `sessions` | One row per active login | `user_id` FK → `users` `ON DELETE CASCADE` |
 | `refresh_tokens` | Rotating refresh tokens | `token_hash` unique; FKs to `users` and `sessions`, both `ON DELETE CASCADE` |
 
@@ -183,6 +183,21 @@ erDiagram
 | `life_areas` | A user's life domains (Health, Career, Mind, …) | `user_id` FK `ON DELETE CASCADE`; `color` matches frontend area tokens; `sort_order` for display |
 | `habits` | Habits grouped under a life area | FKs `user_id` + `area_id` (→ `life_areas`) `ON DELETE CASCADE`; `frequency` enum `daily\|weekdays\|3x\|5x\|weekly`; `duration_minutes` estimated time per session; `difficulty` enum `easy\|medium\|hard`; `archived_at` for soft delete. Completion is **not** stored on this table — see `habit_completions`. |
 | `habit_completions` | Daily habit log — one row per habit per date (completed or missed) | unique `(habit_id, completion_date)`; FKs `ON DELETE CASCADE`; `user_id` denormalized for fast per-user queries; `completed` boolean enables streaks, historical insights, and AI consistency analysis |
+
+### Coaching
+
+A `coach` account is the second half of the product: it has no life areas or
+habits of its own, only a public listing and whatever its clients grant it.
+There is no verification state anywhere here — approving coaches needed an
+admin, that role no longer exists, and credentials are shown to users as
+self-reported instead.
+
+| Table | Purpose | Key constraints |
+|-------|---------|-----------------|
+| `coach_profiles` | A coach's public directory listing (display name, coaching title, bio, specialties, years of experience). Created with the account at registration. | `user_id` FK **unique** (1:1 with a `role = 'coach'` user) `ON DELETE CASCADE`; `specialties` stored as `jsonb` |
+| `coach_credentials` | Qualifications a coach lists on their own profile | `coach_profile_id` FK `ON DELETE CASCADE`; self-reported, no verification flag |
+| `coach_client_requests` | A user's invitation to a coach **and** the permission grant attached to it — `share_habits`, `share_profile` and `edit_habits` are set by the user and editable or revocable by them at any time | unique `(requester_id, coach_id)`; both FKs → `users` `ON DELETE CASCADE`; `status` enum `pending|accepted|declined`. `edit_habits` is only ever true alongside `share_habits`, enforced in both the schemas and the service. Access is read at request time, so narrowing a grant takes effect immediately |
+| `coach_feedback` | The thread between a coach and their client: notes the coach wrote, plus a record of every habit change the coach made | `coach_request_id` FK `ON DELETE CASCADE` (revoking a request deletes the thread with it); `kind` enum `note|habit_change`, where `habit_change` rows are written by the API itself so a client is never surprised by an edited plan; `created_at` only — entries aren't edited |
 
 ### To build — AI layer
 

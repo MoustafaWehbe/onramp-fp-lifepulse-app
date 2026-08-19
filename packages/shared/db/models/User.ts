@@ -63,7 +63,7 @@ export class User
           allowNull: false,
         },
         role: {
-          type: DataTypes.ENUM("admin", "user", "coach"),
+          type: DataTypes.ENUM("user", "coach"),
           defaultValue: "user",
           allowNull: false,
         },

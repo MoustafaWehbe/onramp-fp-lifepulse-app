@@ -8,43 +8,37 @@ import {
 
 import type { CoachProfile } from "./CoachProfile";
 
+/**
+ * A qualification a coach lists on their profile. Self-reported — see the note
+ * on CoachProfile about why there is no verification flag.
+ */
 export interface CoachCredentialAttributes {
   id: string;
   coachProfileId: string;
   name: string;
   issuer?: string;
-  verified: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export interface CoachCredentialCreationAttributes
-  extends Optional<
-    CoachCredentialAttributes,
-    "id" | "issuer" | "verified"
-  > {}
+  extends Optional<CoachCredentialAttributes, "id" | "issuer"> {}
 
 export class CoachCredential
-  extends Model<
-    CoachCredentialAttributes,
-    CoachCredentialCreationAttributes
-  >
+  extends Model<CoachCredentialAttributes, CoachCredentialCreationAttributes>
   implements CoachCredentialAttributes
 {
   declare id: string;
   declare coachProfileId: string;
   declare name: string;
   declare issuer: string | undefined;
-  declare verified: boolean;
 
   declare coachProfile?: NonAttribute<CoachProfile>;
 
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
 
-  static initModel(
-    sequelize: Sequelize,
-  ): typeof CoachCredential {
+  static initModel(sequelize: Sequelize): typeof CoachCredential {
     CoachCredential.init(
       {
         id: {
@@ -71,12 +65,6 @@ export class CoachCredential
         issuer: {
           type: DataTypes.STRING(255),
           allowNull: true,
-        },
-
-        verified: {
-          type: DataTypes.BOOLEAN,
-          allowNull: false,
-          defaultValue: false,
         },
       },
       {

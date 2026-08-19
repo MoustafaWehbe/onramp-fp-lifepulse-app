@@ -10,6 +10,8 @@ export interface CoachRequest {
   status: CoachRequestStatus;
   shareHabits: boolean;
   shareProfile: boolean;
+  /** Only ever true alongside shareHabits — the API enforces that pairing. */
+  editHabits: boolean;
   createdAt: string;
   coach?: { id: string; name: string };
   requester?: { id: string; name: string; email: string };
@@ -49,6 +51,7 @@ export function useCreateCoachRequest() {
       coachId: string;
       shareHabits: boolean;
       shareProfile: boolean;
+      editHabits: boolean;
     }) => {
       const { data } = await apiClient.post<{ data: CoachRequest }>(
         "/coach-requests",
@@ -60,6 +63,43 @@ export function useCreateCoachRequest() {
         queryClient.invalidateQueries({ queryKey: SENT_KEY });
         queryClient.invalidateQueries({ queryKey: RECEIVED_KEY });
         },
+  });
+}
+
+/**
+ * Changing what a coach can see. Separate from useCreateCoachRequest because
+ * this must not disturb an accepted relationship's status.
+ */
+export function useUpdateSharing() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      ...grant
+    }: {
+      id: string;
+      shareHabits: boolean;
+      shareProfile: boolean;
+      editHabits: boolean;
+    }) => {
+      const { data } = await apiClient.patch<{ data: CoachRequest }>(
+        `/coach-requests/${id}/sharing`,
+        grant,
+      );
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: SENT_KEY }),
+  });
+}
+
+/** Ends the relationship: the coach loses access and the notes go with it. */
+export function useRevokeCoachRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.delete(`/coach-requests/${id}`);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: SENT_KEY }),
   });
 }
 

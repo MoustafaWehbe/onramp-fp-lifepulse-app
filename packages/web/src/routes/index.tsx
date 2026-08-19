@@ -3,9 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { GuestRoute } from "./GuestRoute";
-
-import { CoachingPage } from "../pages/Coaching";
-import { CoachProfile } from "../pages/CoachProfile";
+import { RoleRoute } from "./RoleRoute";
 
 // Route-level code splitting: each page (and whatever heavy libraries it
 // alone depends on, e.g. Progress.tsx pulling in recharts/d3) ships as its
@@ -31,6 +29,12 @@ const Onboarding = lazy(() =>
 );
 const AreaDetail = lazy(() =>
   import("../pages/AreaDetail").then((m) => ({ default: m.AreaDetail })),
+);
+const CoachingPage = lazy(() =>
+  import("../pages/Coaching").then((m) => ({ default: m.CoachingPage })),
+);
+const CoachProfile = lazy(() =>
+  import("../pages/CoachProfile").then((m) => ({ default: m.CoachProfile })),
 );
 const NotFound = lazy(() => import("../pages/NotFound").then((m) => ({ default: m.NotFound })));
 
@@ -61,17 +65,23 @@ export function AppRoutes() {
           <Route path="/register" element={<Register />} />
         </Route>
 
-      {/* Protected app */}
-      <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/today" element={<TodayPage />} />
-        <Route path="/progress" element={<ProgressPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/areas/:id" element={<AreaDetail />} />
-        <Route path="/coaching" element={<CoachingPage />} />
-        <Route path="/coaches/:id" element={<CoachProfile />} />
-      </Route>
+        {/* Protected app */}
+        <Route element={<ProtectedRoute />}>
+          {/* Shared by both roles — /profile renders the coach's own profile
+              editor when the account is a coach. */}
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/coaching" element={<CoachingPage />} />
+
+          {/* The habit-tracking half of the product: a coach has no data here. */}
+          <Route element={<RoleRoute allow="user" />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/today" element={<TodayPage />} />
+            <Route path="/progress" element={<ProgressPage />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/areas/:id" element={<AreaDetail />} />
+            <Route path="/coaches/:id" element={<CoachProfile />} />
+          </Route>
+        </Route>
 
         <Route path="*" element={<NotFound />} />
       </Routes>

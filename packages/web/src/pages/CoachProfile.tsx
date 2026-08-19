@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   Award,
   BriefcaseBusiness,
-  CheckCircle2,
   HeartHandshake,
   ShieldCheck,
   Sparkles,
@@ -91,7 +90,6 @@ export function CoachProfile() {
     .toUpperCase();
 
   const title = coach.coachingTitle || "Professional Coach";
-  const verifiedCredentials = coach.credentials.filter((c) => c.verified);
 
   return (
     <AppShell>
@@ -123,11 +121,6 @@ export function CoachProfile() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-2xl font-bold">{coach.name}</h2>
-
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
-                      <CheckCircle2 className="size-3" />
-                      Verified coach
-                    </span>
                   </div>
 
                   <p className="mt-1 text-sm font-medium text-muted-foreground">
@@ -205,30 +198,31 @@ export function CoachProfile() {
           <CardContent className="pt-6">
             <div className="mb-5">
               <p className="mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                Trust & credibility
+                Background
               </p>
 
               <h3 className="mt-1 text-lg font-semibold">
-                Coach verification
+                What this coach says about their training
               </h3>
 
               <p className="mt-1 text-sm text-muted-foreground">
-                Information that helps you make an informed decision when
-                choosing a coach.
+                Everything below is written by the coach themselves. KULTIVAR
+                doesn't check credentials, so treat them the way you would a CV
+                — worth asking about before you share anything.
               </p>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-start gap-3 rounded-xl bg-surface p-4 ring-1 ring-border">
-                <div className="grid size-9 shrink-0 place-items-center rounded-full bg-emerald-50 text-emerald-700">
+                <div className="grid size-9 shrink-0 place-items-center rounded-full bg-surface ring-1 ring-border">
                   <ShieldCheck className="size-5" />
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium">Coach account verified</p>
+                  <p className="text-sm font-medium">You decide what they see</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    An admin reviewed this coach's profile and credentials
-                    before they appeared in the directory.
+                    A coach sees nothing until you invite them and pick what to
+                    share — and you can change or withdraw that at any time.
                   </p>
                 </div>
               </div>
@@ -240,7 +234,7 @@ export function CoachProfile() {
 
                 <div className="flex-1">
                   <p className="text-sm font-medium">
-                    Professional credentials
+                    Self-reported credentials
                   </p>
                   {coach.credentials.length === 0 ? (
                     <p className="mt-0.5 text-xs text-muted-foreground">
@@ -249,20 +243,9 @@ export function CoachProfile() {
                   ) : (
                     <ul className="mt-2 space-y-1.5">
                       {coach.credentials.map((c) => (
-                        <li key={c.id} className="flex items-center justify-between gap-3 text-xs">
-                          <span className="text-foreground">
-                            {c.name}
-                            {c.issuer ? ` · ${c.issuer}` : ""}
-                          </span>
-                          <span
-                            className={
-                              c.verified
-                                ? "font-medium text-emerald-600"
-                                : "text-muted-foreground"
-                            }
-                          >
-                            {c.verified ? "Verified" : "Unverified"}
-                          </span>
+                        <li key={c.id} className="text-xs text-foreground">
+                          {c.name}
+                          {c.issuer ? ` · ${c.issuer}` : ""}
                         </li>
                       ))}
                     </ul>
@@ -270,14 +253,6 @@ export function CoachProfile() {
                 </div>
               </div>
             </div>
-
-            {verifiedCredentials.length === 0 && coach.credentials.length > 0 && (
-              <p className="mt-4 text-xs text-muted-foreground">
-                None of this coach's listed credentials have been individually
-                verified yet — their overall coach status has been, but treat
-                unverified credentials as self-reported.
-              </p>
-            )}
           </CardContent>
         </Card>
 

@@ -1,17 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 
+/** Self-reported — nothing in the product verifies these. */
 export interface CoachCredential {
   id: string;
   name: string;
   issuer: string | null;
-  verified: boolean;
 }
 
 export interface Coach {
   id: string;
+  /** The coach's display name, falling back to their account name. */
   name: string;
-  displayName: string;
+  displayName: string | null;
   coachingTitle: string | null;
   bio: string | null;
   specialties: string[];
@@ -55,7 +56,6 @@ export interface MyCoachProfile {
   bio: string | null;
   specialties: string[];
   yearsExperience: number | null;
-  verificationStatus: "pending" | "verified" | "rejected";
   credentials: CoachCredential[];
 }
 

@@ -13,9 +13,10 @@
 | Life Areas | 5 | Yes |
 | Habits | 5 | Yes |
 | Check-ins | 4 | Yes |
+| Coaching | 16 | Yes |
 | Health | 1 (`GET /health`) | Yes |
 
-**22 API endpoints** under `/api` + 1 health check.
+**Coaching adds 16 endpoints**; the groups above total 39 under `/api`, plus 1 health check.
 
 ---
 
@@ -36,7 +37,7 @@
 ### Auth
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| POST | `/auth/register` | No | Does not set cookies — login after |
+| POST | `/auth/register` | No | Does not set cookies — login after. Takes `role` — `user` or `coach`; a coach also sends `coachingTitle` (required) plus optional `bio`, `specialties`, `yearsExperience` |
 | POST | `/auth/login` | No | Sets auth cookies |
 | POST | `/auth/refresh` | Cookie | Rotates tokens |
 | POST | `/auth/logout` | Yes | |
@@ -79,6 +80,26 @@
 | GET | `/check-ins/today` | Yes |
 | POST | `/check-ins` | Yes |
 | DELETE | `/check-ins/:id` | Yes |
+
+### Coaching
+| Method | Path | Role | Notes |
+|--------|------|------|-------|
+| GET | `/coaches` | Any | Every coach is listed; there is no approval step |
+| GET | `/coaches/:id` | Any | `:id` is the coach's **user** id |
+| GET | `/coaches/me` | Coach | Own editable profile |
+| PATCH | `/coaches/me` | Coach | |
+| POST | `/coaches/me/credentials` | Coach | Self-reported, never verified |
+| DELETE | `/coaches/me/credentials/:credentialId` | Coach | |
+| POST | `/coach-requests` | User | Grants are `shareHabits`, `shareProfile`, `editHabits` (the last requires the first). Re-sending to an accepted coach updates sharing, keeps the relationship |
+| GET | `/coach-requests/sent` | User | |
+| PATCH | `/coach-requests/:id/sharing` | User | Change what a coach can see or do; effective immediately. Withdrawing `shareHabits` withdraws `editHabits` with it |
+| DELETE | `/coach-requests/:id` | User | Ends it — access gone, feedback thread deleted |
+| GET | `/coach-requests/received` | Coach | |
+| PATCH | `/coach-requests/:id` | Coach | Accept or decline |
+| GET | `/coach-requests/:id/client-data` | Coach | Only the sections granted. Habits come grouped under the client's life areas, with raw completion dates over a 30-day window |
+| GET | `/coach-requests/:id/feedback` | Both | |
+| POST | `/coach-requests/:id/feedback` | Coach | |
+| PATCH | `/coach-requests/:id/habits/:habitId` | Coach | Needs the client's `editHabits` grant. Name/frequency/days/duration/difficulty/notes only — never reminders or the habit's area. Each change is recorded in the feedback thread |
 
 ---
 

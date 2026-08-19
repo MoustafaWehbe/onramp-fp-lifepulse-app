@@ -14,6 +14,8 @@ import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
 import { useGoals } from "@/hooks/useGoals";
 import { areaTokens } from "@/lib/area-colors";
 import { useAuth } from "@/hooks/useAuth";
+import { isCoach } from "@/lib/roles";
+import { CoachAccount } from "@/pages/CoachAccount";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,7 +74,13 @@ const MOTIVATION_OPTIONS: { value: MotivationDriver; label: string }[] = [
 ];
 
 export function ProfilePage() {
-  const { data: profile, isPending, isError } = useProfile();
+  const { user } = useAuth();
+  const coach = isCoach(user?.role);
+  // A coach's "profile" is their public directory listing, not a life-areas
+  // questionnaire — same route, different account.
+  const { data: profile, isPending, isError } = useProfile({ enabled: !coach });
+
+  if (coach) return <CoachAccount />;
 
   if (isPending) {
     return (
