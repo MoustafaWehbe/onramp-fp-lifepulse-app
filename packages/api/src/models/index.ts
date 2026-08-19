@@ -12,5 +12,7 @@ export {
   Embedding,
   CoachClientRequest,
   CoachFeedback,
+  CoachProfile,
+  CoachCredential,
   NotificationPreference,
 } from "@starter-kit/shared";

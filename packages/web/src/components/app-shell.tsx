@@ -5,6 +5,7 @@ import {
   BarChart3,
   User,
   LogOut,
+  HeartHandshake,
 } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useAreas } from "@/hooks/useAreas";
@@ -22,6 +23,7 @@ const nav = [
   { to: "/today", label: "Today", icon: CheckCircle2 },
   { to: "/progress", label: "Progress", icon: BarChart3 },
   { to: "/profile", label: "Profile", icon: User },
+  { to: "/coaching", label: "Coaching", icon: HeartHandshake },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {

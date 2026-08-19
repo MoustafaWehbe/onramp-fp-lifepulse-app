@@ -4,6 +4,9 @@ import { Loader2 } from "lucide-react";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { GuestRoute } from "./GuestRoute";
 
+import { CoachingPage } from "../pages/Coaching";
+import { CoachProfile } from "../pages/CoachProfile";
+
 // Route-level code splitting: each page (and whatever heavy libraries it
 // alone depends on, e.g. Progress.tsx pulling in recharts/d3) ships as its
 // own chunk instead of bloating the single main bundle every user has to
@@ -58,15 +61,17 @@ export function AppRoutes() {
           <Route path="/register" element={<Register />} />
         </Route>
 
-        {/* Protected app */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/today" element={<TodayPage />} />
-          <Route path="/progress" element={<ProgressPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/areas/:id" element={<AreaDetail />} />
-        </Route>
+      {/* Protected app */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/today" element={<TodayPage />} />
+        <Route path="/progress" element={<ProgressPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/areas/:id" element={<AreaDetail />} />
+        <Route path="/coaching" element={<CoachingPage />} />
+        <Route path="/coaches/:id" element={<CoachProfile />} />
+      </Route>
 
         <Route path="*" element={<NotFound />} />
       </Routes>

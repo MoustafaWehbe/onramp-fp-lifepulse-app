@@ -12,6 +12,9 @@ import { AiSuggestion } from "./AiSuggestion";
 import { Embedding } from "./Embedding";
 import { CoachClientRequest } from "./CoachClientRequest";
 import { CoachFeedback } from "./CoachFeedback";
+import { CoachProfile } from "./CoachProfile";
+import { CoachCredential } from "./CoachCredential";
+import type { CoachVerificationStatus } from "./CoachProfile";
 import { NotificationPreference } from "./NotificationPreference";
 import { NotificationLog } from "./NotificationLog";
 
@@ -29,10 +32,12 @@ export {
   Embedding,
   CoachClientRequest,
   CoachFeedback,
+  CoachProfile,
+  CoachCredential,
   NotificationPreference,
   NotificationLog,
 };
-
+export type { CoachVerificationStatus };
 export function initModels(sequelize: Sequelize): void {
   User.initModel(sequelize);
   Session.initModel(sequelize);
@@ -47,6 +52,8 @@ export function initModels(sequelize: Sequelize): void {
   Embedding.initModel(sequelize);
   CoachClientRequest.initModel(sequelize);
   CoachFeedback.initModel(sequelize);
+  CoachProfile.initModel(sequelize);
+  CoachCredential.initModel(sequelize);
   NotificationPreference.initModel(sequelize);
   NotificationLog.initModel(sequelize);
 
@@ -66,6 +73,26 @@ export function initModels(sequelize: Sequelize): void {
   // Profile & goals
   User.hasOne(UserProfile, { foreignKey: "userId", as: "profile" });
   UserProfile.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+  User.hasOne(CoachProfile, {
+  foreignKey: "userId",
+  as: "coachProfile",
+});
+
+  CoachProfile.belongsTo(User, {
+    foreignKey: "userId",
+    as: "user",
+  });
+
+  CoachProfile.hasMany(CoachCredential, {
+    foreignKey: "coachProfileId",
+    as: "credentials",
+  });
+
+  CoachCredential.belongsTo(CoachProfile, {
+    foreignKey: "coachProfileId",
+    as: "coachProfile",
+  });
 
   User.belongsToMany(Goal, {
     through: UserGoal,

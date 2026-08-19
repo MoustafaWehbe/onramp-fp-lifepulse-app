@@ -8,6 +8,7 @@ import { checkInsRouter } from "./checkins.routes";
 import { adminRouter } from "./admin.routes";
 import { coachesRouter } from "./coaches.routes";
 import { coachRequestsRouter } from "./coach-requests.routes";
+
 import { aiSuggestionsRouter } from "./ai-suggestions.routes";
 import { notificationsRouter } from "./notifications.routes";
 const router = Router();
