@@ -2,7 +2,11 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { AxiosError } from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../lib/api-client";
-import { AuthContext, type AuthUser } from "./auth-context";
+import {
+  AuthContext,
+  type AuthUser,
+  type RegisterPayload,
+} from "./auth-context";
 
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -57,8 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-async function login(email: string, password: string): Promise<void> {
-  
+async function login(email: string, password: string): Promise<AuthUser> {
+
   queryClient.clear();
 
   const { data } = await apiClient.post<{
@@ -66,14 +70,11 @@ async function login(email: string, password: string): Promise<void> {
   }>("/auth/login", { email, password });
 
   setUser(data.data.user);
+  return data.data.user;
 }
 
-  async function register(
-    email: string,
-    password: string,
-    name: string,
-  ): Promise<void> {
-    await apiClient.post("/auth/register", { email, password, name });
+  async function register(payload: RegisterPayload): Promise<void> {
+    await apiClient.post("/auth/register", payload);
   }
 
 async function logout(): Promise<void> {

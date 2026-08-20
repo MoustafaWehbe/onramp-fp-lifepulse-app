@@ -35,9 +35,11 @@ async function fetchAreas(): Promise<Area[]> {
   return data.data;
 }
 
-export function useAreas() {
+/** `enabled: false` is for coach accounts, which have no life areas of their own. */
+export function useAreas({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: areaKeys.all,
+    enabled,
     queryFn: fetchAreas,
   });
 }

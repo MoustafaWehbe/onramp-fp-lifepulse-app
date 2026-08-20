@@ -2,6 +2,7 @@ import { Router } from "express";
 import { checkInsController } from "../controllers/checkins.controller";
 import { validate } from "../middleware/validate";
 import { authenticate } from "../middleware/authenticate";
+import { authorize } from "../middleware/authorize";
 import {
   listCheckInsQuerySchema,
   createCheckInSchema,
@@ -10,8 +11,9 @@ import {
 
 const router = Router();
 
-// Every check-in route is scoped to the authenticated user.
-router.use(authenticate);
+// Every check-in route is scoped to the authenticated user, and to a user
+// account specifically — a check-in logs a habit, which a coach never has.
+router.use(authenticate, authorize("user"));
 
 router.get("/", validate(listCheckInsQuerySchema, "query"), checkInsController.list);
 router.get("/today", checkInsController.today);

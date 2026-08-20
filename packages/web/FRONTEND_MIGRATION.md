@@ -118,16 +118,13 @@ npm run build
 cd packages/web && npm run build
 ```
 
-## Test credentials
+## Test accounts
 
-After running API seeders:
+There is no seeded login — register at `/register` and pick an account type
+(personal or coach). Seeders only plant reference data, the goals catalogue:
 ```bash
 cd packages/api && npx sequelize-cli db:seed:all
 ```
-- Email: `admin@example.com`
-- Password: `Admin1234!`
-
-Or register a new account at `/register`.
 
 ## What was intentionally excluded
 

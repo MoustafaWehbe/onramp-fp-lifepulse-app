@@ -9,11 +9,14 @@ import {
 import type { User } from "./User";
 import type { CoachCredential } from "./CoachCredential";
 
-export type CoachVerificationStatus =
-  | "pending"
-  | "verified"
-  | "rejected";
-
+/**
+ * A coach's public directory listing, created when they register with the
+ * "coach" role.
+ *
+ * There is no verification state here on purpose: verification only ever meant
+ * "an admin looked at it", and the admin role is gone. Credentials are shown
+ * to users as self-reported, which is what they always actually were.
+ */
 export interface CoachProfileAttributes {
   id: string;
   userId: string;
@@ -22,10 +25,8 @@ export interface CoachProfileAttributes {
   bio?: string;
   specialties: string[];
   yearsExperience?: number;
-  verificationStatus: CoachVerificationStatus;
   createdAt?: Date;
   updatedAt?: Date;
-
 }
 
 export interface CoachProfileCreationAttributes
@@ -37,16 +38,10 @@ export interface CoachProfileCreationAttributes
     | "bio"
     | "specialties"
     | "yearsExperience"
-    | "verificationStatus"
-
-    
   > {}
 
 export class CoachProfile
-  extends Model<
-    CoachProfileAttributes,
-    CoachProfileCreationAttributes
-  >
+  extends Model<CoachProfileAttributes, CoachProfileCreationAttributes>
   implements CoachProfileAttributes
 {
   declare id: string;
@@ -56,7 +51,6 @@ export class CoachProfile
   declare bio: string | undefined;
   declare specialties: string[];
   declare yearsExperience: number | undefined;
-  declare verificationStatus: CoachVerificationStatus;
 
   declare user?: NonAttribute<User>;
   declare credentials?: NonAttribute<CoachCredential[]>;
@@ -85,8 +79,8 @@ export class CoachProfile
         },
 
         displayName: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
+          type: DataTypes.STRING(255),
+          allowNull: true,
         },
 
         coachingTitle: {
@@ -108,16 +102,6 @@ export class CoachProfile
         yearsExperience: {
           type: DataTypes.INTEGER,
           allowNull: true,
-        },
-
-        verificationStatus: {
-          type: DataTypes.ENUM(
-            "pending",
-            "verified",
-            "rejected",
-          ),
-          allowNull: false,
-          defaultValue: "pending",
         },
       },
       {

@@ -14,7 +14,6 @@ import { CoachClientRequest } from "./CoachClientRequest";
 import { CoachFeedback } from "./CoachFeedback";
 import { CoachProfile } from "./CoachProfile";
 import { CoachCredential } from "./CoachCredential";
-import type { CoachVerificationStatus } from "./CoachProfile";
 import { NotificationPreference } from "./NotificationPreference";
 import { NotificationLog } from "./NotificationLog";
 
@@ -37,7 +36,6 @@ export {
   NotificationPreference,
   NotificationLog,
 };
-export type { CoachVerificationStatus };
 export function initModels(sequelize: Sequelize): void {
   User.initModel(sequelize);
   Session.initModel(sequelize);

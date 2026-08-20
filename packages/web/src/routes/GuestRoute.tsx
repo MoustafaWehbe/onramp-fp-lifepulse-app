@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { homePathFor } from "../lib/roles";
 import { Loader2 } from "lucide-react";
 
 export function GuestRoute() {
@@ -22,5 +23,5 @@ export function GuestRoute() {
     );
   }
 
-  return user ? <Navigate to="/dashboard" replace /> : <Outlet />;
+  return user ? <Navigate to={homePathFor(user.role)} replace /> : <Outlet />;
 }

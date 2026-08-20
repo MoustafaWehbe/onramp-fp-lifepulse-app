@@ -27,6 +27,10 @@ tags:
     description: Habits within life areas
   - name: Check-ins
     description: Daily habit completion records
+  - name: Coaching
+    description: >-
+      The coach directory, coaching requests, and the data a user chooses to
+      share with a coach they invited.
 
 components:
   securitySchemes:
@@ -54,6 +58,11 @@ components:
     RegisterBody:
       type: object
       required: [email, password, name]
+      description: >-
+        The `role` picks which product the account gets. A coach is asked for
+        their directory details here, on the same form — `coachingTitle` is
+        required when `role` is `coach`, and the other coach fields are
+        optional. All coach fields are ignored when `role` is `user`.
       properties:
         email:
           type: string
@@ -69,6 +78,29 @@ components:
           minLength: 2
           maxLength: 100
           example: Jane Doe
+        role:
+          type: string
+          enum: [user, coach]
+          default: user
+        coachingTitle:
+          type: string
+          minLength: 2
+          maxLength: 255
+          example: Certified Life & Habit Coach
+        bio:
+          type: string
+          maxLength: 4000
+        specialties:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 100
+          example: [Burnout recovery, Morning routines]
+        yearsExperience:
+          type: integer
+          minimum: 0
+          maximum: 80
 
     LoginBody:
       type: object
@@ -96,7 +128,7 @@ components:
           type: string
         role:
           type: string
-          enum: [user, admin]
+          enum: [user, coach]
         emailVerified:
           type: boolean
         createdAt:
@@ -573,6 +605,375 @@ components:
             (falling back to the X-Timezone header, then UTC). Only pass an
             explicit date when backfilling a past day — future dates are
             rejected.
+
+    CoachCredential:
+      type: object
+      description: >-
+        A qualification a coach lists on their own profile. Self-reported —
+        nothing in the product verifies it.
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: ICF Associate Certified Coach
+        issuer:
+          type: string
+          nullable: true
+          example: International Coaching Federation
+
+    Coach:
+      type: object
+      description: A coach's public directory listing.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The coach's user id — this is what you send as `coachId`.
+        name:
+          type: string
+          description: Display name if the coach set one, otherwise their account name.
+        displayName:
+          type: string
+          nullable: true
+        coachingTitle:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        specialties:
+          type: array
+          items:
+            type: string
+        yearsExperience:
+          type: integer
+          nullable: true
+        credentials:
+          type: array
+          items:
+            $ref: "#/components/schemas/CoachCredential"
+
+    MyCoachProfile:
+      type: object
+      description: The signed-in coach's own editable profile.
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+          nullable: true
+        coachingTitle:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        specialties:
+          type: array
+          items:
+            type: string
+        yearsExperience:
+          type: integer
+          nullable: true
+        credentials:
+          type: array
+          items:
+            $ref: "#/components/schemas/CoachCredential"
+
+    UpdateCoachProfileBody:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 255
+        coachingTitle:
+          type: string
+          minLength: 1
+          maxLength: 255
+        bio:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        specialties:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 100
+        yearsExperience:
+          type: integer
+          minimum: 0
+          maximum: 80
+
+    CreateCredentialBody:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        issuer:
+          type: string
+          minLength: 1
+          maxLength: 255
+
+    CoachRequest:
+      type: object
+      description: >-
+        A user's invitation to a coach, and the permission grant attached to
+        it. The three grant flags are set by the user and can be changed or
+        revoked by them at any time.
+      properties:
+        id:
+          type: string
+          format: uuid
+        requesterId:
+          type: string
+          format: uuid
+        coachId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, accepted, declined]
+        shareHabits:
+          type: boolean
+        shareProfile:
+          type: boolean
+        editHabits:
+          type: boolean
+          description: >-
+            Whether the coach may adjust this client's habits. Only ever true
+            alongside `shareHabits` — the API refuses a grant to edit habits
+            the coach cannot see.
+        createdAt:
+          type: string
+          format: date-time
+        coach:
+          type: object
+          description: Present on requests the signed-in user sent.
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+        requester:
+          type: object
+          description: Present on requests the signed-in coach received.
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            email:
+              type: string
+              format: email
+
+    CreateCoachRequestBody:
+      type: object
+      required: [coachId]
+      properties:
+        coachId:
+          type: string
+          format: uuid
+        shareHabits:
+          type: boolean
+          default: false
+        shareProfile:
+          type: boolean
+          default: false
+        editHabits:
+          type: boolean
+          default: false
+          description: Requires `shareHabits`; 422 otherwise.
+
+    UpdateCoachRequestStatusBody:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [accepted, declined]
+
+    UpdateSharingBody:
+      type: object
+      required: [shareHabits, shareProfile, editHabits]
+      properties:
+        shareHabits:
+          type: boolean
+        shareProfile:
+          type: boolean
+        editHabits:
+          type: boolean
+          description: Requires `shareHabits`; 422 otherwise.
+
+    ClientHabit:
+      type: object
+      description: >-
+        One of the client's habits as their coach sees it. Raw completion dates
+        are returned rather than a percentage so the coach's view scores
+        consistency with the same code the client's own Progress page uses.
+      properties:
+        id:
+          type: string
+          format: uuid
+        areaId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        frequency:
+          $ref: "#/components/schemas/Frequency"
+        daysOfWeek:
+          type: array
+          nullable: true
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+        durationMinutes:
+          type: integer
+          nullable: true
+        difficulty:
+          $ref: "#/components/schemas/Difficulty"
+        notes:
+          type: string
+          nullable: true
+        completionDates:
+          type: array
+          description: Completed dates inside `windowDates`, ascending.
+          items:
+            type: string
+            format: date
+        currentStreak:
+          type: integer
+          description: Consecutive days, read over a year of history.
+        lastCompletedOn:
+          type: string
+          format: date
+          nullable: true
+
+    ClientData:
+      type: object
+      description: >-
+        Only the sections the user granted are present: `areas` requires
+        `shareHabits`, `profile` requires `shareProfile`.
+      properties:
+        canEditHabits:
+          type: boolean
+          description: >-
+            Whether this coach may PATCH the client's habits. Always present,
+            so the UI can render read-only without a second call.
+        windowDates:
+          type: array
+          description: >-
+            The 30 calendar days the coach's view covers, ascending, ending
+            today in the caller's timezone (see the X-Timezone header).
+          items:
+            type: string
+            format: date
+        areas:
+          type: array
+          description: The client's own life areas, in their own order, each with its habits.
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              color:
+                $ref: "#/components/schemas/AreaColor"
+              description:
+                type: string
+                nullable: true
+              habits:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClientHabit"
+        profile:
+          $ref: "#/components/schemas/Profile"
+
+    CoachUpdateHabitBody:
+      type: object
+      description: >-
+        The shape of the plan, and nothing else. Reminder settings and the
+        habit's life area are not editable by a coach — those are the client's
+        own; see the schema source for the reasoning.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        frequency:
+          $ref: "#/components/schemas/Frequency"
+        daysOfWeek:
+          type: array
+          nullable: true
+          minItems: 1
+          maxItems: 7
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+        durationMinutes:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 1440
+        difficulty:
+          type: string
+          nullable: true
+          enum: [easy, medium, hard]
+        notes:
+          type: string
+          nullable: true
+          maxLength: 500
+
+    CoachFeedback:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        coachRequestId:
+          type: string
+          format: uuid
+        coachId:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [note, habit_change]
+          description: >-
+            `note` is something the coach wrote. `habit_change` is written by
+            the API itself when a coach edits one of the client's habits, so the
+            client always sees what changed and when.
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateFeedbackBody:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 2000
 
     ErrorResponse:
       type: object
@@ -1556,3 +1957,698 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── Coaching ───────────────────────────────────────────────────────────────
+
+  /coaches:
+    get:
+      tags: [Coaching]
+      summary: List coaches in the directory
+      operationId: listCoaches
+      description: >-
+        Every coach account appears here as soon as it is registered. There is
+        no approval queue — credentials are shown to users as self-reported.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Coach directory
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Coach"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /coaches/me:
+    get:
+      tags: [Coaching]
+      summary: Get the signed-in coach's own profile
+      operationId: getMyCoachProfile
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Coach profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/MyCoachProfile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a coach account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      tags: [Coaching]
+      summary: Update the signed-in coach's own profile
+      operationId: updateMyCoachProfile
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCoachProfileBody"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/MyCoachProfile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a coach account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+  /coaches/me/credentials:
+    post:
+      tags: [Coaching]
+      summary: Add a credential to the signed-in coach's profile
+      operationId: addCoachCredential
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCredentialBody"
+      responses:
+        "201":
+          description: Profile with the credential added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/MyCoachProfile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a coach account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+  /coaches/me/credentials/{credentialId}:
+    delete:
+      tags: [Coaching]
+      summary: Remove a credential from the signed-in coach's profile
+      operationId: removeCoachCredential
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: credentialId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Profile with the credential removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/MyCoachProfile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a coach account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Credential not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /coaches/{id}:
+    get:
+      tags: [Coaching]
+      summary: Get one coach's directory listing
+      operationId: getCoach
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The coach's user id
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Coach listing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Coach"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Coach not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /coach-requests:
+    post:
+      tags: [Coaching]
+      summary: Invite a coach (user only)
+      operationId: createCoachRequest
+      description: >-
+        Sending to a coach who already accepted updates what is shared and
+        leaves the relationship accepted; sending to one who declined puts the
+        request back to pending.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCoachRequestBody"
+      responses:
+        "201":
+          description: Request created or updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CoachRequest"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Coach accounts cannot request coaching
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Coach not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+  /coach-requests/sent:
+    get:
+      tags: [Coaching]
+      summary: List the requests the signed-in user sent
+      operationId: listSentCoachRequests
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Sent requests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CoachRequest"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /coach-requests/received:
+    get:
+      tags: [Coaching]
+      summary: List the requests the signed-in coach received
+      operationId: listReceivedCoachRequests
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Received requests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CoachRequest"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a coach account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /coach-requests/{id}:
+    patch:
+      tags: [Coaching]
+      summary: Accept or decline a request (coach only)
+      operationId: updateCoachRequestStatus
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCoachRequestStatusBody"
+      responses:
+        "200":
+          description: Updated request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CoachRequest"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not this request's coach
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Already responded to, or validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+    delete:
+      tags: [Coaching]
+      summary: End a coaching relationship (user only)
+      operationId: revokeCoachRequest
+      description: >-
+        Removes the coach's access immediately and deletes the feedback thread
+        along with it.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Revoked
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not this request's requester
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /coach-requests/{id}/sharing:
+    patch:
+      tags: [Coaching]
+      summary: Change what is shared with a coach (user only)
+      operationId: updateCoachRequestSharing
+      description: Takes effect immediately — access is checked when the coach reads.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSharingBody"
+      responses:
+        "200":
+          description: Updated request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CoachRequest"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not this request's requester
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+  /coach-requests/{id}/client-data:
+    get:
+      tags: [Coaching]
+      summary: Read a client's shared data (coach only)
+      operationId: getCoachClientData
+      description: >-
+        Habits come grouped under the client's own life areas. The 30-day
+        window ends "today" in the caller's timezone.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/XTimezone"
+      responses:
+        "200":
+          description: Whatever the client granted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ClientData"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not this request's coach, or not accepted yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /coach-requests/{id}/feedback:
+    get:
+      tags: [Coaching]
+      summary: Read the feedback thread
+      operationId: listCoachFeedback
+      description: Readable by both participants.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Feedback entries, oldest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CoachFeedback"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a participant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags: [Coaching]
+      summary: Leave a note for a client (coach only)
+      operationId: addCoachFeedback
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFeedbackBody"
+      responses:
+        "201":
+          description: Feedback created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CoachFeedback"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not this request's coach, or not accepted yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+  /coach-requests/{id}/habits/{habitId}:
+    patch:
+      tags: [Coaching]
+      summary: Adjust a client's habit (coach only, with permission)
+      operationId: updateClientHabit
+      description: >-
+        Requires the client's `editHabits` grant; 403 without it, and the
+        grant can be withdrawn at any moment. Every change that alters
+        something is written into the feedback thread as a `habit_change`
+        entry, so the client is never surprised by an edited plan.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The coaching request id
+          schema:
+            type: string
+            format: uuid
+        - name: habitId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CoachUpdateHabitBody"
+      responses:
+        "200":
+          description: The updated habit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Habit"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not this request's coach, not accepted, or no edit permission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Request or habit not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"

@@ -163,10 +163,9 @@ sudo -u "$APP_USER" --preserve-env=PATH \
 # Reference data the app cannot function without — the goals catalogue backs the
 # onboarding picker, and without it GET /api/goals returns [].
 #
-# Deliberately NOT `db:seed:all`. That would also run the admin-user seeder,
-# which inserts admin@example.com with the hardcoded password "Admin1234!" and
-# role "admin" — fine on a laptop, a publicly-known administrator login on an
-# internet-facing deployment.
+# Deliberately NOT `db:seed:all`. Only reference data belongs on a deployed
+# host: any seeder that plants an account plants a publicly-known login on an
+# internet-facing machine, so seeding stays narrowed to the goals catalogue.
 #
 # config.js sets seederStorage "sequelize", so an applied seeder is recorded in
 # SequelizeData and never re-inserts. But sequelize-cli treats "already applied"

@@ -5,13 +5,21 @@ import {
   generateTokenPair,
   verifyRefreshToken,
 } from "@starter-kit/shared";
-import { User, Session, RefreshToken } from "../models";
+import { User, Session, RefreshToken, CoachProfile } from "../models";
+import { getDatabase } from "../lib/db";
 import { createError } from "../middleware/error-handler";
+import type { UserRole } from "@starter-kit/shared";
 
 interface RegisterInput {
   email: string;
   password: string;
   name: string;
+  role?: UserRole;
+  // Coach-only, collected on the same form — see registerSchema.
+  coachingTitle?: string;
+  bio?: string;
+  specialties?: string[];
+  yearsExperience?: number;
 }
 
 interface LoginInput {
@@ -29,10 +37,37 @@ export class AuthService {
     }
 
     const passwordHash = await hashPassword(input.password);
-    const user = await User.create({
-      email: input.email,
-      passwordHash,
-      name: input.name,
+    const role: UserRole = input.role ?? "user";
+
+    // A coach without a directory listing is a dead account — they'd have no
+    // page to edit and would never be findable — so the account and the
+    // listing are created together or not at all.
+    const user = await getDatabase().transaction(async (transaction) => {
+      const created = await User.create(
+        {
+          email: input.email,
+          passwordHash,
+          name: input.name,
+          role,
+        },
+        { transaction },
+      );
+
+      if (role === "coach") {
+        await CoachProfile.create(
+          {
+            userId: created.id,
+            displayName: input.name,
+            coachingTitle: input.coachingTitle,
+            bio: input.bio,
+            specialties: input.specialties ?? [],
+            yearsExperience: input.yearsExperience,
+          },
+          { transaction },
+        );
+      }
+
+      return created;
     });
 
     return { id: user.id, email: user.email, name: user.name, role: user.role };

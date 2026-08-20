@@ -1,21 +1,31 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  useCoaches
-} from "@/hooks/useCoaches";
+import { isCoach as isCoachRole } from "@/lib/roles";
+import { useCoaches } from "@/hooks/useCoaches";
 import {
   useSentRequests,
   useReceivedRequests,
   useCreateCoachRequest,
   useUpdateCoachRequestStatus,
+  useUpdateSharing,
+  useRevokeCoachRequest,
   type CoachRequest,
 } from "@/hooks/useCoachRequests";
-import { useClientData, useFeedback, useAddFeedback } from "@/hooks/useCoachFeedback";
+import { useFeedback } from "@/hooks/useCoachFeedback";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ClientDetail } from "@/components/coaching/client-detail";
+import { FeedbackThread } from "@/components/coaching/feedback-thread";
+import {
+  GrantEditor,
+  applyGrantRules,
+  sharingSummary,
+  type Grant,
+} from "@/components/coaching/sharing";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -25,10 +35,8 @@ import {
   XCircle,
   CheckCircle2,
   ChevronRight,
-  Send,
+  ShieldOff,
 } from "lucide-react";
-
-
 
 function StatusBadge({ status }: { status: CoachRequest["status"] }) {
   const map = {
@@ -45,7 +53,6 @@ function StatusBadge({ status }: { status: CoachRequest["status"] }) {
   );
 }
 
-
 function InviteModal({
   coachId,
   coachName,
@@ -55,14 +62,19 @@ function InviteModal({
   coachName: string;
   onClose: () => void;
 }) {
-  const [shareHabits, setShareHabits] = useState(true);
-  const [shareProfile, setShareProfile] = useState(false);
+  // Habits on, editing off: the useful default for a first invite is that the
+  // coach can see the work without being able to rewrite it.
+  const [grant, setGrant] = useState<Grant>({
+    shareHabits: true,
+    shareProfile: false,
+    editHabits: false,
+  });
   const createRequest = useCreateCoachRequest();
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      await createRequest.mutateAsync({ coachId, shareHabits, shareProfile });
+      await createRequest.mutateAsync({ coachId, ...applyGrantRules(grant) });
       toast.success(`Request sent to ${coachName}`);
       onClose();
     } catch {
@@ -72,69 +84,23 @@ function InviteModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Invite ${coachName}`}
     >
       <Card className="w-full max-w-md">
         <CardContent className="pt-6 space-y-5">
           <div>
             <h2 className="text-lg font-bold">Invite {coachName}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Choose what you'd like to share with your coach. You can change this later.
+              Choose what you'd like to share. You can change or withdraw any of
+              this later.
             </p>
           </div>
           <form onSubmit={submit} className="space-y-4">
-            <div className="space-y-3">
-              {(
-                [
-                  {
-                    key: "habits" as const,
-                    label: "Habits & progress",
-                    desc: "Your habits and recent completion counts",
-                    value: shareHabits,
-                    set: setShareHabits,
-                  },
-                  {
-                    key: "profile" as const,
-                    label: "Profile & goals",
-                    desc: "Your goals, lifestyle, and motivation details",
-                    value: shareProfile,
-                    set: setShareProfile,
-                  },
-                ] as const
-              ).map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => item.set(!item.value)}
-                  className={cn(
-                    "w-full flex items-start gap-3 rounded-xl p-4 text-left ring-1 transition-colors",
-                    item.value
-                      ? "bg-foreground text-background ring-foreground"
-                      : "bg-surface ring-border hover:bg-accent",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "mt-0.5 size-4 rounded ring-1 shrink-0 grid place-items-center",
-                      item.value
-                        ? "bg-background ring-background"
-                        : "bg-surface ring-border",
-                    )}
-                  >
-                    {item.value && (
-                      <CheckCircle2 className="size-3 text-foreground" aria-hidden="true" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{item.label}</p>
-                    <p className={cn("text-xs mt-0.5", item.value ? "text-background/60" : "text-muted-foreground")}>
-                      {item.desc}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
+            <GrantEditor grant={grant} onChange={setGrant} />
             <div className="flex gap-2 pt-2">
               <Button type="button" variant="ghost" className="flex-1" onClick={onClose}>
                 Cancel
@@ -150,80 +116,174 @@ function InviteModal({
   );
 }
 
-function MyFeedbackThread({ request }: { request: CoachRequest }) {
+/**
+ * What the coach can see and do, editable after the fact. Access is checked
+ * when the coach acts, so narrowing this takes effect immediately.
+ */
+function SharingControls({
+  request,
+  onRevoked,
+}: {
+  request: CoachRequest;
+  onRevoked: () => void;
+}) {
+  const [grant, setGrant] = useState<Grant>({
+    shareHabits: request.shareHabits,
+    shareProfile: request.shareProfile,
+    editHabits: request.editHabits,
+  });
+  const updateSharing = useUpdateSharing();
+  const revoke = useRevokeCoachRequest();
+
+  const saved: Grant = {
+    shareHabits: request.shareHabits,
+    shareProfile: request.shareProfile,
+    editHabits: request.editHabits,
+  };
+  const dirty = (Object.keys(saved) as (keyof Grant)[]).some(
+    (key) => grant[key] !== saved[key],
+  );
+  const coachName = request.coach?.name ?? "this coach";
+
+  const save = async () => {
+    try {
+      await updateSharing.mutateAsync({ id: request.id, ...applyGrantRules(grant) });
+      toast.success("Sharing updated");
+    } catch {
+      toast.error("Couldn't update what you're sharing");
+      setGrant(saved);
+    }
+  };
+
+  const stopSharing = async () => {
+    try {
+      await revoke.mutateAsync(request.id);
+      toast.success(`${coachName} no longer has access`);
+      onRevoked();
+    } catch {
+      toast.error("Couldn't remove this coach");
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-5 space-y-4">
+        <div>
+          <p className="mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            What {coachName} can see
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Changes apply immediately.
+          </p>
+        </div>
+
+        <GrantEditor grant={grant} onChange={setGrant} />
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            onClick={save}
+            disabled={!dirty || updateSharing.isPending}
+          >
+            {updateSharing.isPending ? "Saving…" : "Save changes"}
+          </Button>
+
+          <ConfirmDialog
+            trigger={
+              <Button size="sm" variant="ghost" className="gap-2 text-destructive">
+                <ShieldOff className="size-3.5" aria-hidden="true" />
+                Stop sharing
+              </Button>
+            }
+            title={`Remove ${coachName}?`}
+            description="They lose access to your data straight away, and the notes they left you are deleted with the request. You can invite them again later."
+            confirmLabel="Remove coach"
+            destructive
+            onConfirm={stopSharing}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** The client's side of one coaching relationship. */
+function MyCoachDetail({
+  request,
+  onRevoked,
+}: {
+  request: CoachRequest;
+  onRevoked: () => void;
+}) {
   const { data: feedback = [], isPending } = useFeedback(request.id);
 
   return (
     <div className="max-w-2xl space-y-6">
       <div>
         <h3 className="text-base font-semibold mb-1">
-          Notes from {request.coach?.name ?? "your coach"}
+          {request.coach?.name ?? "Your coach"}
         </h3>
         <StatusBadge status={request.status} />
       </div>
 
-      <div className="space-y-3">
-        {isPending
-          ? Array.from({ length: 2 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))
-          : feedback.length === 0
-          ? (
-              <p className="text-sm text-muted-foreground">
-                No feedback yet — your coach hasn't left any notes.
-              </p>
-            )
-          : feedback.map((entry) => (
-              <div key={entry.id} className="rounded-xl bg-surface p-4 ring-1 ring-border">
-                <p className="text-sm">{entry.body}</p>
-                <p className="text-[10px] text-muted-foreground mt-2">
-                  {new Date(entry.createdAt).toLocaleDateString(undefined, {
-                    year: "numeric", month: "short", day: "numeric",
-                  })}
-                </p>
-              </div>
-            ))}
+      <SharingControls request={request} onRevoked={onRevoked} />
+
+      <div>
+        <p className="mono mb-3 text-[10px] uppercase tracking-widest text-muted-foreground">
+          Notes & changes
+        </p>
+        <FeedbackThread
+          entries={feedback}
+          isPending={isPending}
+          emptyMessage="Nothing yet — your coach hasn't left any notes or made any changes."
+        />
       </div>
     </div>
   );
 }
 
+function BackButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="mb-6 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+    >
+      <ChevronRight className="size-4 rotate-180" aria-hidden="true" />
+      {label}
+    </button>
+  );
+}
+
 function UserCoachingView() {
   const [tab, setTab] = useState<"find" | "requests">("find");
-  const [inviting, setInviting] = useState<{
-  id: string;
-  displayName: string;
-} | null>(null);
-  const [selectedRequest, setSelectedRequest] = useState<CoachRequest | null>(null);
+  const [inviting, setInviting] = useState<{ id: string; name: string } | null>(
+    null,
+  );
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
 
   const { data: coaches = [], isPending: coachesLoading } = useCoaches();
   const { data: sent = [], isPending: sentLoading } = useSentRequests();
 
   const sentCoachIds = new Set(
-    sent
-      .filter((r) => r.status !== "declined")
-      .map((r) => r.coachId),
+    sent.filter((r) => r.status !== "declined").map((r) => r.coachId),
   );
 
-  /*
-   * If the client selected a request, show the feedback thread.
-   * This is what was missing before.
-   */
+  // Looked up by id rather than held as an object: the detail view edits
+  // sharing, so a snapshot taken at click time would go stale the moment it
+  // saved — and would survive a request the user just revoked.
+  const selectedRequest = sent.find((r) => r.id === selectedRequestId) ?? null;
+
   if (selectedRequest) {
     return (
       <>
-        <button
-          onClick={() => setSelectedRequest(null)}
-          className="mb-6 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ChevronRight
-            className="size-4 rotate-180"
-            aria-hidden="true"
-          />
-          Back to requests
-        </button>
-
-        <MyFeedbackThread request={selectedRequest} />
+        <BackButton
+          label="Back to requests"
+          onClick={() => setSelectedRequestId(null)}
+        />
+        <MyCoachDetail
+          request={selectedRequest}
+          onRevoked={() => setSelectedRequestId(null)}
+        />
       </>
     );
   }
@@ -231,11 +291,11 @@ function UserCoachingView() {
   return (
     <>
       {inviting && (
-       <InviteModal
-        coachId={inviting.id}
-        coachName={inviting.displayName}
-        onClose={() => setInviting(null)}
-      />
+        <InviteModal
+          coachId={inviting.id}
+          coachName={inviting.name}
+          onClose={() => setInviting(null)}
+        />
       )}
 
       {/* Tabs */}
@@ -253,9 +313,7 @@ function UserCoachingView() {
           >
             {t === "find"
               ? "Find a coach"
-              : `My requests${
-                  sent.length > 0 ? ` (${sent.length})` : ""
-                }`}
+              : `My requests${sent.length > 0 ? ` (${sent.length})` : ""}`}
           </button>
         ))}
       </div>
@@ -279,9 +337,7 @@ function UserCoachingView() {
                 className="mx-auto size-10 mb-3 opacity-30"
                 aria-hidden="true"
               />
-              <p className="text-sm">
-                No verified coaches available yet.
-              </p>
+              <p className="text-sm">No coaches have signed up yet.</p>
             </div>
           ) : (
             coaches.map((coach) => {
@@ -292,19 +348,15 @@ function UserCoachingView() {
                   <CardContent className="pt-5 space-y-3">
                     <div className="flex items-center gap-3">
                       <div className="grid size-10 place-items-center rounded-full bg-foreground text-background mono text-sm font-bold shrink-0">
-                        {coach.displayName?.[0]?.toUpperCase() ?? "C"}
+                        {coach.name?.[0]?.toUpperCase() ?? "C"}
                       </div>
 
                       <div className="min-w-0">
-                        <p className="font-semibold truncate">
-                          {coach.displayName}
-                        </p>
+                        <p className="font-semibold truncate">{coach.name}</p>
 
-                        {(coach.coachingTitle ||
-                          coach.specialties?.length > 0) && (
+                        {(coach.coachingTitle || coach.specialties?.length > 0) && (
                           <p className="text-xs text-muted-foreground truncate">
-                            {coach.coachingTitle ||
-                              coach.specialties?.join(", ")}
+                            {coach.coachingTitle || coach.specialties?.join(", ")}
                           </p>
                         )}
                       </div>
@@ -316,18 +368,20 @@ function UserCoachingView() {
                       </p>
                     )}
 
-                    <Button
-                      className="w-full"
-                      disabled={alreadySent}
-                      onClick={() =>
-                        setInviting({
-                          id: coach.id,
-                          displayName: coach.name,
-                        })
-                      }
-                    >
-                      {alreadySent ? "Request sent" : "Invite coach"}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="outline" className="flex-1" asChild>
+                        <Link to={`/coaches/${coach.id}`}>View profile</Link>
+                      </Button>
+                      <Button
+                        className="flex-1"
+                        disabled={alreadySent}
+                        onClick={() =>
+                          setInviting({ id: coach.id, name: coach.name })
+                        }
+                      >
+                        {alreadySent ? "Request sent" : "Invite"}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -355,27 +409,17 @@ function UserCoachingView() {
                 className="mx-auto size-10 mb-3 opacity-30"
                 aria-hidden="true"
               />
-              <p className="text-sm">
-                You haven't invited a coach yet.
-              </p>
+              <p className="text-sm">You haven't invited a coach yet.</p>
             </div>
           ) : (
             sent.map((req) => (
               <Card
                 key={req.id}
-                className={cn(
-                  "ring-1 ring-transparent transition-all",
-                  req.status === "accepted" &&
-                    "cursor-pointer hover:ring-foreground/30",
-                )}
-                onClick={() => {
-                  /*
-                   * Only accepted requests can have coach feedback.
-                   */
-                  if (req.status === "accepted") {
-                    setSelectedRequest(req);
-                  }
-                }}
+                className="ring-1 ring-transparent transition-all cursor-pointer hover:ring-foreground/30"
+                // Every row opens: even a pending or declined request is a
+                // standing permission grant the user should be able to review
+                // and withdraw without waiting on the coach.
+                onClick={() => setSelectedRequestId(req.id)}
               >
                 <CardContent className="pt-5">
                   <div className="flex items-center justify-between gap-4">
@@ -386,22 +430,19 @@ function UserCoachingView() {
 
                       <p className="text-xs text-muted-foreground mt-1">
                         {req.status === "accepted"
-                          ? "Your coach can now view the data you shared and leave feedback."
+                          ? `Sharing ${sharingSummary(req)} — tap to change or stop.`
                           : req.status === "pending"
-                          ? "Waiting for the coach to respond."
-                          : "This request was declined."}
+                            ? "Waiting for the coach to respond."
+                            : "This request was declined."}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
                       <StatusBadge status={req.status} />
-
-                      {req.status === "accepted" && (
-                        <ChevronRight
-                          className="size-4 text-muted-foreground"
-                          aria-hidden="true"
-                        />
-                      )}
+                      <ChevronRight
+                        className="size-4 text-muted-foreground"
+                        aria-hidden="true"
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -414,158 +455,18 @@ function UserCoachingView() {
   );
 }
 
-function ProfileSnapshot({ profile }: { profile: Record<string, unknown> }) {
-  const str = (v: unknown): string =>
-    Array.isArray(v) ? v.join(", ") : String(v ?? "");
-
-  const rows: { label: string; key: string; suffix?: string }[] = [
-    { label: "Goals", key: "goals" },
-    { label: "Stress", key: "stressLevel", suffix: "/10" },
-    { label: "Sleep", key: "sleepHours", suffix: " hrs" },
-    { label: "Motivation", key: "motivationDriver" },
-    { label: "Profession", key: "profession" },
-    { label: "Energy", key: "energyPattern" },
-  ];
-
-  return (
-    <>
-      {rows
-        .filter(({ key }) => profile[key] != null)
-        .map(({ label, key, suffix }) => (
-          <p key={key}>
-            <span className="text-muted-foreground">{label}: </span>
-            {str(profile[key])}{suffix ?? ""}
-          </p>
-        ))}
-    </>
-  );
-}
-
-function ClientDetail({ request }: { request: CoachRequest }) {
-  const { data, isPending } = useClientData(request.id);
-  const { data: feedback = [], isPending: fbLoading } = useFeedback(request.id);
-  const addFeedback = useAddFeedback(request.id);
-  const [draft, setDraft] = useState("");
-
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!draft.trim()) return;
-    try {
-      await addFeedback.mutateAsync(draft.trim());
-      setDraft("");
-      toast.success("Feedback saved");
-    } catch {
-      toast.error("Couldn't save feedback");
-    }
-  };
-
-  return (
-    <div className="space-y-8 max-w-2xl">
-      <div>
-        <h3 className="text-base font-semibold mb-1">
-          {request.requester?.name ?? "Client"}
-        </h3>
-        <p className="text-xs text-muted-foreground">
-          Sharing: {[request.shareHabits && "habits", request.shareProfile && "profile"].filter(Boolean).join(", ") || "nothing"}
-        </p>
-      </div>
-
-      {/* Habits */}
-      {request.shareHabits && (
-        <div>
-          <p className="mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
-            Habits — last 30 days
-          </p>
-          {isPending ? (
-            <div className="space-y-2">
-              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {(data?.habits ?? []).map((h) => (
-                <Card key={h.id}>
-                  <CardContent className="py-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">{h.name}</p>
-                      <p className="text-xs text-muted-foreground">{h.frequency}</p>
-                    </div>
-                    <span className="mono text-sm font-bold">{h.recentCompletions}×</span>
-                  </CardContent>
-                </Card>
-              ))}
-              {(data?.habits ?? []).length === 0 && (
-                <p className="text-sm text-muted-foreground">No habits recorded yet.</p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Profile */}
-      {request.shareProfile && data?.profile && (
-        <div>
-          <p className="mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
-            Profile snapshot
-          </p>
-          <Card>
-            <CardContent className="pt-5 space-y-2 text-sm">
-                <ProfileSnapshot profile={data.profile} />
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      <Separator />
-
-      {/* Feedback thread */}
-      <div>
-        <p className="mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
-          Feedback thread
-        </p>
-        <div className="space-y-3 mb-4">
-          {fbLoading
-            ? Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)
-            : feedback.length === 0
-            ? <p className="text-sm text-muted-foreground">No feedback yet — add your first note below.</p>
-            : feedback.map((entry) => (
-                <div key={entry.id} className="rounded-xl bg-surface p-4 ring-1 ring-border">
-                  <p className="text-sm">{entry.body}</p>
-                  <p className="text-[10px] text-muted-foreground mt-2">
-                    {new Date(entry.createdAt).toLocaleDateString(undefined, {
-                      year: "numeric", month: "short", day: "numeric",
-                    })}
-                  </p>
-                </div>
-              ))}
-        </div>
-        <form onSubmit={submit} className="space-y-2">
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={3}
-            placeholder="Leave a note for your client…"
-            className="w-full rounded-lg bg-surface px-4 py-3 text-sm outline-hidden ring-1 ring-border focus:ring-foreground"
-          />
-          <Button type="submit" className="w-full gap-2" disabled={!draft.trim() || addFeedback.isPending}>
-            <Send className="size-3.5" aria-hidden="true" />
-            {addFeedback.isPending ? "Saving…" : "Add note"}
-          </Button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-
-
 function CoachView() {
   const [tab, setTab] = useState<"requests" | "clients">("requests");
-  const [selectedClient, setSelectedClient] = useState<CoachRequest | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const { data: received = [], isPending: receivedLoading } = useReceivedRequests();
   const updateStatus = useUpdateCoachRequestStatus();
 
   const pending = received.filter((r) => r.status === "pending");
   const accepted = received.filter((r) => r.status === "accepted");
+
+  // By id, so a client narrowing their sharing mid-session is reflected here
+  // rather than leaving the coach looking at a grant that no longer holds.
+  const selectedClient = received.find((r) => r.id === selectedClientId) ?? null;
 
   const respond = async (id: string, status: "accepted" | "declined") => {
     try {
@@ -579,13 +480,10 @@ function CoachView() {
   if (selectedClient) {
     return (
       <>
-        <button
-          onClick={() => setSelectedClient(null)}
-          className="mb-6 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ChevronRight className="size-4 rotate-180" aria-hidden="true" />
-          Back to clients
-        </button>
+        <BackButton
+          label="Back to clients"
+          onClick={() => setSelectedClientId(null)}
+        />
         <ClientDetail request={selectedClient} />
       </>
     );
@@ -614,100 +512,103 @@ function CoachView() {
 
       {tab === "requests" && (
         <div className="space-y-3 max-w-2xl">
-          {receivedLoading
-            ? Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
-            : pending.length === 0
-            ? (
-                <div className="py-16 text-center text-muted-foreground">
-                  <Clock className="mx-auto size-10 mb-3 opacity-30" aria-hidden="true" />
-                  <p className="text-sm">No pending requests.</p>
-                </div>
-              )
-            : pending.map((req) => (
-                <Card key={req.id}>
-                  <CardContent className="pt-5 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{req.requester?.name ?? "User"}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {req.requester?.email}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Wants to share: {[req.shareHabits && "habits", req.shareProfile && "profile"].filter(Boolean).join(", ") || "nothing"}
-                        </p>
-                      </div>
-                      <StatusBadge status={req.status} />
+          {receivedLoading ? (
+            Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full" />
+            ))
+          ) : pending.length === 0 ? (
+            <div className="py-16 text-center text-muted-foreground">
+              <Clock className="mx-auto size-10 mb-3 opacity-30" aria-hidden="true" />
+              <p className="text-sm">No pending requests.</p>
+            </div>
+          ) : (
+            pending.map((req) => (
+              <Card key={req.id}>
+                <CardContent className="pt-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{req.requester?.name ?? "User"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {req.requester?.email}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Wants to share: {sharingSummary(req)}
+                      </p>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => respond(req.id, "accepted")}
-                        disabled={updateStatus.isPending}
-                      >
-                        Accept
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => respond(req.id, "declined")}
-                        disabled={updateStatus.isPending}
-                      >
-                        Decline
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    <StatusBadge status={req.status} />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => respond(req.id, "accepted")}
+                      disabled={updateStatus.isPending}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => respond(req.id, "declined")}
+                      disabled={updateStatus.isPending}
+                    >
+                      Decline
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       )}
 
       {tab === "clients" && (
         <div className="space-y-3 max-w-2xl">
-          {accepted.length === 0
-            ? (
-                <div className="py-16 text-center text-muted-foreground">
-                  <UserCheck className="mx-auto size-10 mb-3 opacity-30" aria-hidden="true" />
-                  <p className="text-sm">No accepted clients yet.</p>
-                </div>
-              )
-            : accepted.map((req) => (
-                <Card
-                  key={req.id}
-                  className="cursor-pointer hover:ring-foreground/30 transition-all ring-1 ring-transparent"
-                  onClick={() => setSelectedClient(req)}
-                >
-                  <CardContent className="pt-5 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{req.requester?.name ?? "Client"}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Sharing: {[req.shareHabits && "habits", req.shareProfile && "profile"].filter(Boolean).join(", ") || "nothing"}
-                      </p>
-                    </div>
-                    <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
-                  </CardContent>
-                </Card>
-              ))}
+          {accepted.length === 0 ? (
+            <div className="py-16 text-center text-muted-foreground">
+              <UserCheck className="mx-auto size-10 mb-3 opacity-30" aria-hidden="true" />
+              <p className="text-sm">No accepted clients yet.</p>
+            </div>
+          ) : (
+            accepted.map((req) => (
+              <Card
+                key={req.id}
+                className="cursor-pointer hover:ring-foreground/30 transition-all ring-1 ring-transparent"
+                onClick={() => setSelectedClientId(req.id)}
+              >
+                <CardContent className="pt-5 flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{req.requester?.name ?? "Client"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Sharing: {sharingSummary(req)}
+                    </p>
+                  </div>
+                  <ChevronRight
+                    className="size-4 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       )}
     </>
   );
 }
 
-
-
 export function CoachingPage() {
   const { user } = useAuth();
-  const isCoach = user?.role === "coach";
+  const coach = isCoachRole(user?.role);
 
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Community"
-        title={isCoach ? "Coach dashboard." : "Find a coach."}
+        eyebrow={coach ? "Clients" : "Community"}
+        title={coach ? "Coach dashboard." : "Find a coach."}
       />
-      {isCoach ? <CoachView /> : <UserCoachingView />}
+      {coach ? <CoachView /> : <UserCoachingView />}
     </AppShell>
   );
 }

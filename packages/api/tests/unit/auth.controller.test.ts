@@ -20,6 +20,10 @@ jest.mock("../../src/services/auth.service", () => ({
 import { authService } from "../../src/services/auth.service";
 const mockAuthService = authService as jest.Mocked<typeof authService>;
 
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
 // ─── POST /api/auth/register ──────────────────────────────────────────────────
 
 describe("POST /api/auth/register", () => {
@@ -60,6 +64,80 @@ describe("POST /api/auth/register", () => {
     });
 
     expect(res.status).toBe(422);
+  });
+
+  it("defaults to the user role when none is given", async () => {
+    mockAuthService.register.mockResolvedValue({
+      id: "uuid-1",
+      email: "alice@example.com",
+      name: "Alice",
+      role: "user",
+    });
+
+    await request(app).post("/api/auth/register").send({
+      email: "alice@example.com",
+      password: "SecurePass1",
+      name: "Alice",
+    });
+
+    expect(mockAuthService.register).toHaveBeenCalledWith(
+      expect.objectContaining({ role: "user" }),
+    );
+  });
+
+  it("passes the coach's profile details through when registering as a coach", async () => {
+    mockAuthService.register.mockResolvedValue({
+      id: "uuid-2",
+      email: "coach@example.com",
+      name: "Sam",
+      role: "coach",
+    });
+
+    const res = await request(app).post("/api/auth/register").send({
+      email: "coach@example.com",
+      password: "SecurePass1",
+      name: "Sam",
+      role: "coach",
+      coachingTitle: "Habit & Wellbeing Coach",
+      specialties: ["Burnout recovery"],
+      yearsExperience: 6,
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.role).toBe("coach");
+    expect(mockAuthService.register).toHaveBeenCalledWith(
+      expect.objectContaining({
+        role: "coach",
+        coachingTitle: "Habit & Wellbeing Coach",
+        specialties: ["Burnout recovery"],
+        yearsExperience: 6,
+      }),
+    );
+  });
+
+  it("rejects a coach signup with no coaching title", async () => {
+    const res = await request(app).post("/api/auth/register").send({
+      email: "coach@example.com",
+      password: "SecurePass1",
+      name: "Sam",
+      role: "coach",
+    });
+
+    expect(res.status).toBe(422);
+    expect(res.body.errors[0].field).toBe("coachingTitle");
+    expect(mockAuthService.register).not.toHaveBeenCalled();
+  });
+
+  it("rejects a role that no longer exists", async () => {
+    const res = await request(app).post("/api/auth/register").send({
+      email: "alice@example.com",
+      password: "SecurePass1",
+      name: "Alice",
+      role: "admin",
+    });
+
+    expect(res.status).toBe(422);
+    expect(mockAuthService.register).not.toHaveBeenCalled();
   });
 });
 

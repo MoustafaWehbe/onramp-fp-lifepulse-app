@@ -23,6 +23,30 @@ export const coachRequestsController = {
     }
   },
 
+  async updateSharing(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const requestId = req.params.id as string;
+      const request = await coachRequestsService.updateSharing(
+        requestId,
+        req.user!.userId,
+        req.body,
+      );
+      res.json({ data: request });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async revoke(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const requestId = req.params.id as string;
+      await coachRequestsService.revoke(requestId, req.user!.userId);
+      res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async listReceived(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const requests = await coachRequestsService.listReceived(req.user!.userId);
@@ -49,8 +73,27 @@ export const coachRequestsController = {
   async getClientData(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const requestId = req.params.id as string;
-      const data = await coachRequestsService.getClientData(requestId, req.user!.userId);
+      const data = await coachRequestsService.getClientData(
+        requestId,
+        req.user!.userId,
+        req.get("x-timezone") ?? undefined,
+      );
       res.json({ data });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async updateClientHabit(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id, habitId } = req.params as { id: string; habitId: string };
+      const habit = await coachRequestsService.updateClientHabit(
+        id,
+        req.user!.userId,
+        habitId,
+        req.body,
+      );
+      res.json({ data: habit });
     } catch (err) {
       next(err);
     }

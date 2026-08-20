@@ -2,6 +2,7 @@ import { Router } from "express";
 import { areaController } from "../controllers/area.controller";
 import { validate } from "../middleware/validate";
 import { authenticate } from "../middleware/authenticate";
+import { authorize } from "../middleware/authorize";
 import {
   createAreaSchema,
   updateAreaSchema,
@@ -10,8 +11,10 @@ import {
 
 const router = Router();
 
-// Every life-area route is scoped to the authenticated user.
-router.use(authenticate);
+// Every life-area route is scoped to the authenticated user, and to a user
+// account specifically: life areas belong to the person being coached, so a
+// coach's own would be data no screen in their app can ever show.
+router.use(authenticate, authorize("user"));
 
 router.get("/", areaController.list);
 router.post("/", validate(createAreaSchema), areaController.create);

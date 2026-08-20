@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "../../hooks/useAuth";
+import { homePathFor } from "../../lib/roles";
 import { ArrowRight } from "lucide-react";
 
 const loginSchema = z.object({
@@ -29,8 +30,11 @@ export function Login() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setError(null);
-      await login(data.email, data.password);
-      navigate("/dashboard");
+      const user = await login(data.email, data.password);
+      // Coaches have no dashboard of their own — their home is the coaching
+      // screen. Routing off the response avoids a flash of the wrong page
+      // while the auth context settles.
+      navigate(homePathFor(user.role));
     } catch {
       setError("Invalid email or password");
     }

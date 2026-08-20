@@ -11,8 +11,6 @@ import { errorHandler } from "./src/middleware/error-handler";
 import { originGuard } from "./src/middleware/origin-guard";
 import { rateLimiter } from "./src/middleware/rate-limiter";
 import { csrfProtection } from "./src/middleware/csrf";
-import { authenticate } from "./src/middleware/authenticate";
-import { authorize } from "./src/middleware/authorize";
 import { router } from "./src/routes";
 import { healthReport } from "./src/lib/health";
 
@@ -70,26 +68,20 @@ app.use("/api", csrfProtection);
 app.use("/api", router);
 
 // ─── OpenAPI / Swagger UI ─────────────────────────────────────────────────────
-const openApiSpec = yaml.load(
-  fs.readFileSync(path.join(__dirname, "openapi.yaml"), "utf8"),
-) as object;
-
 // The schema enumerates every endpoint and payload shape — handy in dev, free
-// reconnaissance in production.
-const docsGuard =
-  process.env.NODE_ENV === "production"
-    ? [authenticate, authorize("admin")]
-    : ([] as never[]);
+// reconnaissance in production. It used to be gated behind an admin login;
+// with that role gone there is no account privileged enough to be worth
+// exposing it to, so production simply doesn't serve the docs at all.
+if (process.env.NODE_ENV !== "production") {
+  const openApiSpec = yaml.load(
+    fs.readFileSync(path.join(__dirname, "openapi.yaml"), "utf8"),
+  ) as object;
 
-app.get("/api/openapi.yaml", ...docsGuard, (_req, res) =>
-  res.sendFile(path.join(__dirname, "openapi.yaml")),
-);
-app.use(
-  "/api/docs",
-  ...docsGuard,
-  swaggerUi.serve,
-  swaggerUi.setup(openApiSpec),
-);
+  app.get("/api/openapi.yaml", (_req, res) =>
+    res.sendFile(path.join(__dirname, "openapi.yaml")),
+  );
+  app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec));
+}
 
 // ─── Health checks ────────────────────────────────────────────────────────────
 // Liveness: is the process up at all? Never touches a dependency, so a database

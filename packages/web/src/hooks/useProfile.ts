@@ -4,9 +4,15 @@ import type { Profile } from "@/lib/store";
 
 const PROFILE_KEY = ["profile"];
 
-export function useProfile() {
+/**
+ * `enabled: false` is used for coach accounts, which have no life-area profile
+ * to load — fetching one would only produce an empty shell and a pointless
+ * request on every screen.
+ */
+export function useProfile({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: PROFILE_KEY,
+    enabled,
     queryFn: async () => {
       const { data } = await apiClient.get<{ data: Profile }>("/profile");
       return data.data;
