@@ -129,7 +129,7 @@ export function AiPanel() {
                 ? "This feature needs an OpenAI API key configured on the server."
                 : noAreas
                   ? "Create a life area first — then Kultivar can suggest habits tailored to your profile and goals."
-                  : "Generate a couple of tailored habit ideas for each of your life areas, based on your profile, goals, and what you're already tracking."}
+                  : "Generate a few tailored habit ideas for each of your life areas, based on your profile, goals, and what you're already tracking."}
             </p>
           </div>
         </div>
@@ -183,8 +183,8 @@ export function AiPanel() {
 
       {!hasSuggestions && !suggestionsLoading && !notConfigured && !noAreas && (
         <p className="mt-3 text-xs text-background/50">
-          Suggestions are tailored to your profile, goals, and the areas you&apos;ve created — 2 per
-          area.
+          Suggestions are tailored to your profile, goals, and the areas you&apos;ve created — 3 per
+          area, each with a note to help you stick with it.
         </p>
       )}
     </div>
@@ -212,6 +212,13 @@ function SuggestionRow({
           <p className="text-sm font-medium">{suggestion.suggestedName}</p>
           {suggestion.rationale && (
             <p className="mt-0.5 text-xs italic text-background/60">{suggestion.rationale}</p>
+          )}
+          {/* Shown here so the note isn't a surprise that only appears after the
+              habit has already been added. */}
+          {suggestion.notes && (
+            <p className="mt-1.5 border-l-2 border-background/20 pl-2 text-xs text-background/50">
+              {suggestion.notes}
+            </p>
           )}
           <span className="mono mt-1 inline-block text-[10px] uppercase tracking-wider text-background/40">
             {suggestion.frequency}

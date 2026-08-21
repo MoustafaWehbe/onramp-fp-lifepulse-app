@@ -26,6 +26,4 @@ export const createCheckInSchema = z.object({
 export const checkInIdParamSchema = z.object({
   id: z.string().uuid("Invalid check-in id"),
 });
-
-export type ListCheckInsQuery = z.infer<typeof listCheckInsQuerySchema>;
 export type CreateCheckInInput = z.infer<typeof createCheckInSchema>;

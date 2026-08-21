@@ -52,3 +52,7 @@ Thumbs.db
 
 # ─── Generated message previews (npm run preview:messages) ────────────────────
 message-previews/
+
+# ─── Scratch files from local debugging ───────────────────────────────────────
+cookies.txt
+*.stackdump

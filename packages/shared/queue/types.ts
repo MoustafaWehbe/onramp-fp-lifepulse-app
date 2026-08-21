@@ -6,8 +6,6 @@ export const QUEUE_NAMES = {
   REENGAGEMENT: "reengagement",
 } as const;
 
-export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
-
 // ─── Job data shapes ───────────────────────────────────────────────────────────
 export interface EmailJobData {
   to: string;
@@ -39,12 +37,6 @@ export interface ReEngagementSweepJobData {
   /** ISO timestamp the sweep was scheduled for; present only for traceability. */
   scheduledFor?: string;
 }
-
-export type JobData =
-  | EmailJobData
-  | EmbeddingsJobData
-  | HabitReminderJobData
-  | ReEngagementSweepJobData;
 
 // ─── Job result shapes ─────────────────────────────────────────────────────────
 export interface EmailJobResult {

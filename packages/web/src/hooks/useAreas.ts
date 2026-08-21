@@ -17,13 +17,6 @@ export interface CreateAreaInput {
   description?: string;
 }
 
-export interface UpdateAreaInput {
-  id: string;
-  name?: string;
-  color?: AreaColor;
-  description?: string | null;
-}
-
 // Single query key for the areas list — every mutation invalidates this so
 // all screens (Dashboard, AreaDetail, Today, Progress, AppShell) stay in sync.
 export const areaKeys = {
@@ -50,23 +43,6 @@ export function useCreateArea() {
   return useMutation({
     mutationFn: async (input: CreateAreaInput) => {
       const { data } = await apiClient.post<{ data: Area }>("/areas", input);
-      return data.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: areaKeys.all });
-    },
-  });
-}
-
-export function useUpdateArea() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, ...input }: UpdateAreaInput) => {
-      const { data } = await apiClient.patch<{ data: Area }>(
-        `/areas/${id}`,
-        input,
-      );
       return data.data;
     },
     onSuccess: () => {

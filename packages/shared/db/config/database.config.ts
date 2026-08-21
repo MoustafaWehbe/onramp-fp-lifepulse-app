@@ -1,7 +1,5 @@
 import { Sequelize } from "sequelize";
 
-let sequelizeInstance: Sequelize | null = null;
-
 export function createSequelize(databaseUrl?: string): Sequelize {
   const url = databaseUrl ?? process.env.DATABASE_URL;
 
@@ -25,9 +23,3 @@ export function createSequelize(databaseUrl?: string): Sequelize {
   });
 }
 
-export function getSequelize(): Sequelize {
-  if (!sequelizeInstance) {
-    sequelizeInstance = createSequelize();
-  }
-  return sequelizeInstance;
-}

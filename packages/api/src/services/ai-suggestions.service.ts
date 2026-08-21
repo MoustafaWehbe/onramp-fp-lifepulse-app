@@ -31,6 +31,7 @@ function serializeSuggestion(suggestion: AiSuggestion) {
     areaId: suggestion.areaId,
     suggestedName: suggestion.suggestedName,
     rationale: suggestion.rationale ?? null,
+    notes: suggestion.notes ?? null,
     frequency: suggestion.frequency,
     durationMinutes: suggestion.durationMinutes ?? null,
     difficulty: suggestion.difficulty ?? null,
@@ -187,6 +188,7 @@ export class AiSuggestionsService {
       areaId: string;
       suggestedName: string;
       rationale: string;
+      notes: string;
       frequency: HabitFrequency;
       durationMinutes?: number;
       difficulty?: HabitDifficulty;
@@ -206,6 +208,7 @@ export class AiSuggestionsService {
         areaId: suggestion.areaId,
         suggestedName: suggestion.suggestedName,
         rationale: suggestion.rationale,
+        notes: suggestion.notes,
         frequency: suggestion.frequency,
         durationMinutes: suggestion.durationMinutes ?? undefined,
         difficulty: suggestion.difficulty ?? undefined,
@@ -247,6 +250,7 @@ export class AiSuggestionsService {
       frequency: suggestion.frequency,
       durationMinutes: suggestion.durationMinutes,
       difficulty: suggestion.difficulty,
+      notes: suggestion.notes,
       reminderEnabled: false,
     });
     await suggestion.update({ status: "accepted", acceptedHabitId: habit.id });
@@ -272,6 +276,7 @@ export class AiSuggestionsService {
             frequency: suggestion.frequency,
             durationMinutes: suggestion.durationMinutes,
             difficulty: suggestion.difficulty,
+            notes: suggestion.notes,
             reminderEnabled: false,
           },
           { transaction },

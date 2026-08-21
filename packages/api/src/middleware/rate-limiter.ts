@@ -52,16 +52,10 @@ export const refreshRateLimiter = makeLimiter("refresh", {
 });
 
 /**
- * Guards POST /ai/suggestions against rapid double-clicks / retry bursts.
- * This is a request-throttle safety net, not the real cost control — the
- * actual "one batch per user per hour" business rule lives in
- * ai-suggestions.service.ts's DB-backed cooldown, which only records a
- * timestamp once a batch is *successfully* generated. Without this limiter,
- * several quick clicks could all sneak past that check simultaneously
- * (since none of them has written a row yet) and fire off multiple
- * concurrent OpenAI calls. Keyed by user id (route runs behind
- * `authenticate`), not IP, so it can't be triggered by other users sharing
- * a NAT/office network.
+ * Catches concurrent clicks that would all pass ai-suggestions.service.ts's
+ * hourly cooldown at once (none has written its timestamp row yet) and fire
+ * off parallel OpenAI calls. Keyed by user id, not IP, so users behind one
+ * NAT can't throttle each other.
  */
 export const aiGenerateRateLimiter = makeLimiter("ai-generate", {
   windowMs: 5 * 60 * 1_000, // 5 minutes

@@ -10,6 +10,8 @@ export interface AiSuggestion {
   areaId: string;
   suggestedName: string;
   rationale: string | null;
+  /** Practical tip from the model. Copied onto the habit's own notes on accept. */
+  notes: string | null;
   frequency: Frequency;
   durationMinutes: number | null;
   difficulty: HabitDifficulty | null;

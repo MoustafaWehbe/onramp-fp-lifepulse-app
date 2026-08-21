@@ -1,14 +1,12 @@
 /**
- * Presentation escape hatches, read from the query string:
+ * Presentation escape hatches for popups that normally need real history
+ * (a month without a check-in, a reminder time that has passed):
  *
  *   /today?demo=welcome   forces the returning-user popup
  *   /today?demo=reminder  forces a habit reminder popup
  *
- * Both popups normally depend on real conditions — a month without a check-in,
- * or a reminder time that has passed — which can't be conjured up during a
- * demo without falsifying the account's history. These flags only change what
- * is rendered; no data is written, and removing the parameter restores the
- * real behaviour immediately.
+ * Render-only — nothing is written, and dropping the parameter restores the
+ * real behaviour.
  */
 export type DemoPopup = "welcome" | "reminder";
 
