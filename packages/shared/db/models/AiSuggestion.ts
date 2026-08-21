@@ -11,6 +11,7 @@ export interface AiSuggestionAttributes {
   areaId: string;
   suggestedName: string;
   rationale?: string;
+  notes?: string;
   frequency: HabitFrequency;
   durationMinutes?: number;
   difficulty?: HabitDifficulty;
@@ -25,6 +26,7 @@ export interface AiSuggestionCreationAttributes extends Optional<
   AiSuggestionAttributes,
   | "id"
   | "rationale"
+  | "notes"
   | "durationMinutes"
   | "difficulty"
   | "status"
@@ -41,6 +43,7 @@ export class AiSuggestion
   declare areaId: string;
   declare suggestedName: string;
   declare rationale: string | undefined;
+  declare notes: string | undefined;
   declare frequency: HabitFrequency;
   declare durationMinutes: number | undefined;
   declare difficulty: HabitDifficulty | undefined;
@@ -72,6 +75,7 @@ export class AiSuggestion
         },
         suggestedName: { type: DataTypes.STRING(255), allowNull: false },
         rationale: { type: DataTypes.TEXT, allowNull: true },
+        notes: { type: DataTypes.TEXT, allowNull: true },
         frequency: {
           type: DataTypes.ENUM("daily", "weekdays", "3x", "5x", "weekly"),
           allowNull: false,

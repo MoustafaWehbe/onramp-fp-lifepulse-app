@@ -109,4 +109,3 @@ export const listHabitsQuerySchema = z.object({
 
 export type CreateHabitInput = z.infer<typeof createHabitSchema>;
 export type UpdateHabitInput = z.infer<typeof updateHabitSchema>;
-export type ListHabitsQuery = z.infer<typeof listHabitsQuerySchema>;

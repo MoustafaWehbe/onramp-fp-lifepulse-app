@@ -23,11 +23,18 @@ export const suggestionResponseSchema = z.object({
         .describe(
           "One short sentence tying this specific habit back to the user's own profile/goals data.",
         ),
+      notes: z
+        .string()
+        .min(1)
+        .max(280)
+        .describe(
+          "A practical tip for actually doing the habit — a cue, a place, or a way to " +
+            "start small. Addressed to the user, and saved onto the habit itself when " +
+            "they accept the suggestion.",
+        ),
     }),
   ),
 });
-
-export type SuggestionResponse = z.infer<typeof suggestionResponseSchema>;
 
 /** Plain chat message shape — structurally compatible with the OpenAI SDK's
  * `ChatCompletionMessageParam` without needing `openai` as a direct
@@ -60,7 +67,7 @@ export interface SuggestionAreaContext {
   recentlyDismissedNames: string[];
 }
 
-export const SUGGESTIONS_PER_AREA = 2;
+export const SUGGESTIONS_PER_AREA = 3;
 
 /** Renders only the profile fields that are actually present. This is what
  * lets the onboarding/profile form shrink later without ever touching the
@@ -109,13 +116,22 @@ export function buildSuggestionMessages(
 ): PromptMessage[] {
   const system: PromptMessage = {
     role: "system",
-    content:
+    content: [
       "You are a habit-design assistant inside a life-tracking app called Kultivar. " +
-      "Given a user's profile and a set of life areas they've created, propose small, " +
-      "concrete, specific daily/weekly habits — never vague advice like \"be healthier\". " +
-      "Each suggestion must clearly connect to something in the user's actual data via " +
-      "its rationale. Prefer habits that fit the user's stated free time, energy pattern, " +
-      "and workload rather than generic best practices.",
+        "Given a user's profile and a set of life areas they've created, propose small, " +
+        'concrete, specific daily/weekly habits — never vague advice like "be healthier". ' +
+        "Each suggestion must clearly connect to something in the user's actual data via " +
+        "its rationale. Prefer habits that fit the user's stated free time, energy pattern, " +
+        "and workload rather than generic best practices.",
+      "",
+      "Every suggestion carries two distinct pieces of text, and they must not repeat each other:",
+      "- rationale: why THIS user should do it, in one sentence, referencing their data. " +
+        "Shown once, while they decide whether to add the habit.",
+      "- notes: how to actually do it — an anchor to an existing routine, where to do it, or " +
+        'the smallest version still worth counting. Addressed to the user as "you". This is ' +
+        "saved onto the habit itself and is what they reread weeks later, so keep it " +
+        "practical rather than motivational.",
+    ].join("\n"),
   };
 
   const user: PromptMessage = {

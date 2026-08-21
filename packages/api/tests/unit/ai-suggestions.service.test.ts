@@ -35,6 +35,7 @@ jest.mock("../../src/lib/ai", () => ({
 import { AiSuggestion, LifeArea, Habit } from "../../src/models";
 import { profileService } from "../../src/services/profile.service";
 import { chatCompletionStructured } from "../../src/lib/ai";
+import { SUGGESTIONS_PER_AREA } from "../../src/lib/ai-suggestions-prompt";
 import { aiSuggestionsService } from "../../src/services/ai-suggestions.service";
 
 const mockAiSuggestion = AiSuggestion as unknown as {
@@ -155,6 +156,7 @@ describe("generate — area cap", () => {
         durationMinutes: 10,
         difficulty: "easy",
         rationale: "Because reasons.",
+        notes: "Do it right after your morning coffee.",
       })),
     });
 
@@ -193,6 +195,7 @@ describe("generate — area cap", () => {
           durationMinutes: null,
           difficulty: null,
           rationale: "Rationale",
+          notes: "A practical tip.",
         },
       ],
     });
@@ -203,6 +206,39 @@ describe("generate — area cap", () => {
     const result = await aiSuggestionsService.generate(USER_ID);
     expect(result).toHaveLength(1);
     expect(result[0].areaId).toBe("a1");
+  });
+
+  it("persists the model's note and keeps at most SUGGESTIONS_PER_AREA per area", async () => {
+    mockAiSuggestion.max.mockResolvedValue(null);
+    mockLifeArea.findAll.mockResolvedValue([makeArea("a1")]);
+
+    // One more than we asked for, so the per-area cap has something to trim.
+    mockChatCompletionStructured.mockResolvedValue({
+      suggestions: Array.from({ length: SUGGESTIONS_PER_AREA + 1 }, (_, i) => ({
+        areaId: "a1",
+        suggestedName: `Habit ${i}`,
+        frequency: "daily",
+        durationMinutes: null,
+        difficulty: null,
+        rationale: `Rationale ${i}`,
+        notes: `Note ${i}`,
+      })),
+    });
+    mockAiSuggestion.bulkCreate.mockImplementation(async (rows: Array<Record<string, unknown>>) =>
+      rows.map((row, i) => ({ ...row, id: `sugg-${i}`, createdAt: new Date() })),
+    );
+
+    const result = await aiSuggestionsService.generate(USER_ID);
+
+    expect(result).toHaveLength(SUGGESTIONS_PER_AREA);
+    expect(result.map((s) => s.notes)).toEqual(
+      Array.from({ length: SUGGESTIONS_PER_AREA }, (_, i) => `Note ${i}`),
+    );
+
+    const [inserted] = mockAiSuggestion.bulkCreate.mock.calls[0] as [
+      Array<Record<string, unknown>>,
+    ];
+    expect(inserted[0].notes).toBe("Note 0");
   });
 });
 
@@ -283,6 +319,7 @@ describe("accept", () => {
       areaId: "a1",
       suggestedName: "Read 10 pages",
       rationale: "You mentioned wanting to read more.",
+      notes: "Keep the book on your pillow so you see it at bedtime.",
       frequency: "daily",
       durationMinutes: 15,
       difficulty: "easy",
@@ -302,6 +339,7 @@ describe("accept", () => {
       frequency: "daily",
       durationMinutes: 15,
       difficulty: "easy",
+      notes: "Keep the book on your pillow so you see it at bedtime.",
       reminderEnabled: false,
     });
     expect(update).toHaveBeenCalledWith({ status: "accepted", acceptedHabitId: "habit-1" });

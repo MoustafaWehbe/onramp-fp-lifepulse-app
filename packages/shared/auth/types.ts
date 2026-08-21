@@ -6,8 +6,6 @@
  */
 export type UserRole = "user" | "coach";
 
-export const USER_ROLES = ["user", "coach"] as const;
-
 export interface JwtPayload {
   userId: string;
   email: string;

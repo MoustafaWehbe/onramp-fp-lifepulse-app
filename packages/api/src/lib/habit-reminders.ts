@@ -33,16 +33,12 @@ function buildCronPattern(
 }
 
 /**
- * Creates, updates, or removes the BullMQ Job Scheduler that drives reminders
- * for this habit, based on its current reminderEnabled/reminderTime/timezone/
- * archivedAt fields. The scheduler id is always the habit's own id, so calling
- * this again with new settings transparently replaces the previous schedule
- * (upsertJobScheduler is idempotent by id).
+ * Creates, updates, or removes this habit's BullMQ Job Scheduler to match its
+ * current reminder fields. The scheduler id is the habit's own id, so calling
+ * this again transparently replaces the previous schedule.
  *
- * Scheduling is a best-effort side effect of habit CRUD: callers should catch
- * errors here (e.g. Redis unavailable) and log rather than fail the request,
- * since the habit row in Postgres remains the source of truth and a
- * reconciliation job can re-sync schedules later if needed.
+ * Best-effort: callers should catch errors here (e.g. Redis down) and log
+ * rather than fail the request — Postgres stays the source of truth.
  */
 export async function syncHabitReminder(habit: Habit): Promise<void> {
   const shouldSchedule =
